@@ -58,3 +58,7 @@ Dit bestand is voor Claude (en andere ontwikkelaars): huisregels die bij elke wi
   supertype); toon dan de gebruikte query en probeer een lichtere variant.
 - TCGdex-prijzen zitten in het detail-endpoint per kaart — vergeet `addTcgdexPrices()` niet
   voor elke TCGdex-lijst (ook Japans!).
+- Externe marktplaatsen (Cardmarket, TCGplayer, PriceCharting) kunnen niets met Japanse
+  tekens of Japanse setnamen: bouw zoek-URL's altijd via `marketName()` (Engelse naam) en
+  geef bij PriceCharting "japanese" + kaartnummer mee. Directe productlinks (`cmUrl`/`tpUrl`)
+  hebben altijd voorrang boven een zoekopdracht.
