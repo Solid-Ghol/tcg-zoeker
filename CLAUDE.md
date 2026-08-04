@@ -77,3 +77,6 @@ Dit bestand is voor Claude (en andere ontwikkelaars): huisregels die bij elke wi
 - **TCGplayer is bewust verwijderd** uit de interface (expliciete wens): Cardmarket is main,
   PriceCharting (ungraded/graded) is sub. De USD-prijs wordt nog wel stilletjes opgehaald als
   terugval voor prijssortering en collectiewaarde wanneer een euroteken ontbreekt — niet tonen.
+- **De twee prijstegels op de kaart zijn allebei Cardmarket**: trendprijs (main, met ▲/▼) en
+  gemiddelde 30 dagen. PriceCharting zit alleen in het detailvenster — geen eigen prijstegel,
+  ook een expliciete wens.
