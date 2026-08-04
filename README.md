@@ -43,9 +43,12 @@ voordat je hem online zet.
 ## Collectie, prijstrend en delen
 
 - **Collectie** — met **+ Collectie** op een kaart bewaar je hem in je verzamellijst (opgeslagen
-  in de browser, alleen op dat apparaat). Via **⭐ Collectie** in de zoekbalk bekijk je alles
-  terug, met de geschatte totale waarde. Zoek je een bewaarde kaart opnieuw op, dan worden de
+  in de browser, alleen op dat apparaat). Via de knop **Collectie** rechtsboven bekijk je alles
+  terug, met de geschatte totale waarde; nogmaals klikken (of de terug-link in de statusregel)
+  brengt je weer bij je zoekresultaten. Zoek je een bewaarde kaart opnieuw op, dan worden de
   opgeslagen prijzen automatisch ververst.
+- **Back-up** — via het tandwiel exporteer je je collectie als JSON-bestand en lees je zo'n
+  back-up ook weer in (op hetzelfde of een ander apparaat; wordt samengevoegd met wat er al is).
 - **Voortgang per set** — in de set-weergave zie je per set een balkje met hoeveel kaarten je
   daarvan al hebt (bijvoorbeeld „34/165 in collectie").
 - **Prijstrend** — een ▲ of ▼ naast de Cardmarket-prijs betekent dat de trendprijs minstens 3%
