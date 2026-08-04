@@ -584,7 +584,11 @@ function mapPtcg(c, qLabel){
     img: c.images ? c.images.small : '', imgBig: c.images ? c.images.large : '',
     usd: tp ? (tp.market != null ? tp.market : tp.mid) : null,
     eur: cm ? (cm.trendPrice != null ? cm.trendPrice : cm.averageSellPrice) : null,
-    cmLow: cm ? cm.lowPrice : null, cmAvg30: cm ? cm.avg30 : null,
+    // laagste aanbod het liefst in conditie Excellent of beter (near mint-segment):
+    // de kale lowPrice telt óók Played/Damaged mee en is daardoor onbetrouwbaar laag
+    cmLow: cm ? (cm.lowPriceExPlus != null ? cm.lowPriceExPlus : cm.lowPrice) : null,
+    cmLowEx: !!(cm && cm.lowPriceExPlus != null),
+    cmAvg30: cm ? cm.avg30 : null,
     // pokemontcg.io-links volgen altijd dit vaste patroon; bouw ze desnoods zelf op,
     // zodat óók kaarten zonder prijsblok direct op de juiste Cardmarket-pagina uitkomen
     cmUrl: (c.cardmarket && c.cardmarket.url) ||
@@ -672,7 +676,10 @@ async function addTcgdexPrices(cards, lang, max = 60){
         if (p){
           const cm = p.cardmarket || p;
           c.eur = digPrice(cm, ['trend','avg','avg7','avg30','trendPrice','averageSellPrice','low']);
-          c.cmLow = digPrice(cm, ['low','lowPrice','low1']);
+          const lowEx = digPrice(cm, ['lowPriceExPlus','lowExPlus','low-ex-plus']);
+          const lowAny = digPrice(cm, ['low','lowPrice','low1']);
+          c.cmLow = lowEx != null ? lowEx : lowAny;
+          c.cmLowEx = lowEx != null;
           c.cmAvg30 = digPrice(cm, ['avg30','avg']);
           c.usd = digPrice(p.tcgplayer || {}, ['marketPrice','market','mid','directLow','lowPrice']);
           // levert TCGdex een directe Cardmarket-link mee, gebruik die dan voor de prijsknop
@@ -834,7 +841,7 @@ function cmLink(c){
 }
 function cmTitle(c){
   const bits = [];
-  if (c.cmLow != null) bits.push('laagste ' + money(c.cmLow,'EUR'));
+  if (c.cmLow != null) bits.push('laagste' + (c.cmLowEx ? ' (EX of beter)' : '') + ' ' + money(c.cmLow,'EUR'));
   if (c.eur != null) bits.push('trend ' + money(c.eur,'EUR'));
   if (c.cmAvg30 != null) bits.push('gem. 30 dagen ' + money(c.cmAvg30,'EUR'));
   const head = c.cmUrl ? 'Cardmarket — direct naar deze kaart' : 'Cardmarket — zoekresultaten';
@@ -866,7 +873,7 @@ function refreshColPrices(){
   CARDS.forEach(c => {
     const k = colKey(c);
     if (COL[k]){
-      COL[k] = {...COL[k], eur: c.eur, usd: c.usd, cmLow: c.cmLow, cmAvg30: c.cmAvg30,
+      COL[k] = {...COL[k], eur: c.eur, usd: c.usd, cmLow: c.cmLow, cmLowEx: c.cmLowEx, cmAvg30: c.cmAvg30,
                 cmUrl: c.cmUrl || COL[k].cmUrl,
                 img: c.img || COL[k].img, imgBig: c.imgBig || COL[k].imgBig};
       changed = true;
@@ -1009,7 +1016,7 @@ function openCard(i){
       <h4><a href="${h(cmLink(c))}" target="_blank" rel="noopener">Cardmarket (EUR) ↗</a></h4>
       <table class="mtab">
         <tr><th>Trendprijs</th><td><a href="${h(cmLink(c))}" target="_blank" rel="noopener">${eur(c.eur)}</a> ${trendArrow(c)}</td></tr>
-        <tr><th>Laagste aanbod</th><td><a href="${h(cmLink(c))}" target="_blank" rel="noopener">${eur(c.cmLow)}</a></td></tr>
+        <tr><th>Laagste aanbod${c.cmLowEx ? ' (EX of beter)' : ''}</th><td><a href="${h(cmLink(c))}" target="_blank" rel="noopener">${eur(c.cmLow)}</a></td></tr>
         <tr><th>Gemiddelde 30 dagen</th><td><a href="${h(cmLink(c))}" target="_blank" rel="noopener">${eur(c.cmAvg30)}</a></td></tr>
       </table>
       <h4>PriceCharting</h4>
