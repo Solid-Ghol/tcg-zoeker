@@ -27,6 +27,10 @@ voordat je hem online zet.
 - **Zoeken** op Pokémon-naam of setnaam (bovenste veld). Tijdens het typen vult de zoekbalk
   Pokémon-namen aan (alle soorten, via PokéAPI) — sets blader je door via het
   kaarten-icoontje naast de zoekbalk.
+- **Foto-herkenning** — met het camera-icoon naast de zoekbalk maak je een foto van een kaart;
+  de naam en het kaartnummer worden herkend en meteen opgezocht (de juiste kaartversie wordt
+  vanzelf geopend). Dit vraagt eenmalig een kleine gratis serverfunctie — zie
+  *[Foto-herkenning instellen](#foto-herkenning-instellen)* hieronder.
 - **Blader door alle sets** — de link onder de zoekbalk opent een overzicht van álle sets,
   gegroepeerd per serie (net als op pkmn.gg). Eén klik haalt de hele set op.
 - **Filter** (balk die na een zoekopdracht verschijnt): filtert binnen wat je al hebt
@@ -86,8 +90,10 @@ zetten.
 | `apple-touch-icon.png` | pictogram voor "Zet op beginscherm" op iOS |
 | `icon-512.png` | pictogram voor Android en desktopbrowsers |
 | `manifest.webmanifest` | zorgt dat de zoeker als eigen app opent in plaats van als tabblad |
+| `api/identify.js` | **alleen nodig voor de foto-herkenning** — de serverfunctie voor Vercel (zie hieronder) |
 
-Dit `README.md` hoeft niet mee, maar mag.
+Dit `README.md` hoeft niet mee, maar mag. Zoeken, filteren, de collectie en alle prijzen
+werken volledig zonder `api/identify.js`; die map is puur voor de foto-herkenning.
 
 ## Stappen
 
@@ -118,6 +124,64 @@ Dit `README.md` hoeft niet mee, maar mag.
 Open het bestand in de repository, klik op het potloodje, pas aan en commit. GitHub Pages werkt
 zichzelf binnen een minuut bij. Een nieuwe versie van `index.html` uploaden over de oude heen mag
 ook — GitHub vraagt dan om de vervanging te bevestigen.
+
+## Foto-herkenning instellen
+
+Het camera-icoon naast de zoekbalk herkent een kaart van een foto (naam + kaartnummer) en
+zoekt die meteen op. Dat gebeurt door de foto naar een klein serverfunctietje te sturen dat
+op zijn beurt een vision-model bevraagt. Waarom een server? Omdat je API-sleutel geheim moet
+blijven — die mag nooit in de openbare `index.html` staan. De serverfunctie (`api/identify.js`)
+bewaart de sleutel veilig en geeft alleen de herkende kaart terug.
+
+Dit is **optioneel**: laat je het weg, dan werkt de rest van de zoeker gewoon; het camera-icoon
+geeft dan een nette melding.
+
+### Kies een vision-model (gratis kan!)
+
+De serverfunctie werkt met twee aanbieders en kiest automatisch degene waarvan je een sleutel
+instelt:
+
+- **Google Gemini — gratis.** Er is een gratis tier die ruim voldoende is om kaarten te scannen,
+  **zonder creditcard**. Haal een sleutel op via [aistudio.google.com](https://aistudio.google.com/)
+  (Google-account → *Get API key*). Dit is de aanbevolen optie.
+- **Anthropic Claude — betaald.** Sleutel via [console.anthropic.com](https://console.anthropic.com/);
+  je zet er zelf een klein tegoed op (per foto een fractie van een cent).
+
+Verder heb je een gratis **[Vercel](https://vercel.com/)**-account nodig (host de serverfunctie
+kosteloos).
+
+### De makkelijkste manier: alles op Vercel
+
+Als je de site via Vercel host, staan de zoeker én de serverfunctie op hetzelfde adres en werkt
+het camera-icoon meteen — je hoeft in de zoeker niets in te stellen.
+
+1. Zorg dat `index.html`, de iconen, `manifest.webmanifest` én de map `api/` (met `identify.js`)
+   in je GitHub-repository staan.
+2. Log in op [vercel.com](https://vercel.com/) met je GitHub-account en klik **Add New… → Project**.
+3. Kies je `tcg-zoeker`-repository en klik **Import**. Framework: **Other** (geen build nodig).
+4. Vouw **Environment Variables** open en voeg één sleutel toe:
+   - Gratis: **Name** `GEMINI_API_KEY` — **Value** je Gemini-sleutel. *(optioneel `GEMINI_MODEL`)*
+   - Of betaald: **Name** `ANTHROPIC_API_KEY` — **Value** je Anthropic-sleutel. *(optioneel `ANTHROPIC_MODEL`)*
+5. Klik **Deploy**. Na een halve minuut krijg je een adres zoals
+   `https://tcg-zoeker.vercel.app` — open dat en het camera-icoon werkt.
+
+### Of: site op GitHub Pages, functie op Vercel
+
+Wil je de site op GitHub Pages houden (zoals hierboven beschreven), dan zet je alléén de
+serverfunctie op Vercel:
+
+1. Doorloop de Vercel-stappen hierboven; je krijgt een adres zoals `https://tcg-zoeker.vercel.app`.
+2. Open je zoeker op GitHub Pages, klik op het **tandwiel** rechtsboven en vul bij
+   **Foto-herkenning** de volledige functie-URL in:
+   `https://tcg-zoeker.vercel.app/api/identify`.
+3. Klaar — de instelling wordt op je apparaat onthouden.
+
+### Wat er met je foto gebeurt
+
+De foto wordt in de browser verkleind en één keer naar je eigen serverfunctie gestuurd, die hem
+aan het gekozen vision-model (Gemini of Claude) doorgeeft om de kaart af te lezen. Er wordt niets
+van de foto bewaard. Alleen jij gebruikt je eigen sleutel; bij Gemini blijf je binnen de gratis
+tier, bij Anthropic betaal je je eigen (zeer kleine) verbruik.
 
 ## Privacy en kosten
 
