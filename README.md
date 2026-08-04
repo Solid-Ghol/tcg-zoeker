@@ -32,9 +32,9 @@ voordat je hem online zet.
   met wat er in je resultaten zit. Dit is dus iets anders dan opnieuw zoeken. Met **✕ Wis
   filters** zet je alles in één keer terug; **✕ Wis** naast de zoekknop leegt het zoekveld en
   de zoekkenmerken.
-- **Zoek op kenmerken** — het paneel onder de zoekbalk start een níeuwe zoekopdracht door de
-  volledige Engelse database, op soort kaart, energietype, subtype (ex, VMAX, …), rariteit en
-  set. Er is geen naam nodig.
+- **Zoek op kenmerken** — het tweede tabblad boven de zoekbalk start een níeuwe zoekopdracht
+  door de volledige Engelse database, op soort kaart, energietype, subtype (ex, VMAX, …),
+  rariteit en set. Er is geen naam nodig.
 - **Energietypes** krijgen hun herkenbare kleur (Fire = rood, Water = blauw, Lightning = geel,
   enzovoort), zowel op de kaart als in het detailvenster en de CSV-export.
 - **Kaartdetails** — het detailvenster toont naast set en prijzen ook soort/subtype, HP,
@@ -56,9 +56,10 @@ voordat je hem online zet.
   handig om een vondst naar iemand door te sturen. Ook „Zoek op kenmerken" levert zo'n deelbare
   link op.
 
-## Thema's
+## Instellingen en thema's
 
-Rechtsboven in de zoekbalk kies je een thema; je keuze wordt onthouden op je apparaat.
+Achter het tandwiel rechtsboven zitten de instellingen: thema, zoekmodus (naam/set/automatisch)
+en de bron van kaartgegevens. Je themakeuze wordt onthouden op je apparaat.
 
 - **Systeem** — volgt automatisch de licht/donker-stand van je telefoon of computer.
 - **Donker** en **Licht** — vaste keuze, ongeacht je systeeminstelling.

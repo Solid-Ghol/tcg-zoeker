@@ -80,7 +80,24 @@ body{margin:0;background:var(--bg);color:var(--txt);
 header{padding:26px 24px 18px;border-bottom:1px solid var(--line);background:var(--panel);position:relative}
 header::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;
   background:linear-gradient(90deg,var(--accent),var(--accent2))}
-h1{margin:0 0 4px;font-size:26px;letter-spacing:-.015em;display:flex;align-items:center;gap:11px}
+h1{margin:0 0 4px;font-size:26px;letter-spacing:-.015em;display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+.hbtns{margin-left:auto;display:flex;gap:8px;align-items:center}
+.hbtns button{font-size:13.5px}
+.iconbtn{padding:8px}
+.iconbtn .ico{margin:0;vertical-align:-2px}
+/* twee zoek-tabbladen: op naam of op kenmerken */
+.stabs{display:inline-flex;margin-top:16px;border:1px solid var(--line);border-radius:10px;
+  overflow:hidden;background:var(--panel2)}
+.stab{border:0;border-radius:0;padding:8px 16px;font-size:13.5px;background:transparent;color:var(--dim)}
+.stab.on{background:linear-gradient(180deg,var(--accent),var(--accent2));color:#fff;font-weight:600}
+.stab:not(.on):hover{color:var(--txt)}
+/* instellingen-menu achter het tandwiel */
+.settings{display:none;position:absolute;right:24px;top:60px;z-index:20;width:300px;
+  padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);
+  box-shadow:var(--shadow)}
+.settings.on{display:flex;flex-direction:column;gap:10px}
+.settings label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--dim)}
+.settings select{width:100%}
 /* Pokéball in CSS: kleurt automatisch mee met het gekozen thema */
 .ball{width:26px;height:26px;border-radius:50%;flex:0 0 auto;position:relative;
   background:linear-gradient(180deg,var(--accent) 44%,var(--txt) 44% 56%,var(--panel2) 56%);
@@ -128,7 +145,7 @@ label.chk{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--d
 .advpanel.on{display:block}
 .advgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
 .advgrid label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--dim)}
-.advgrid input,.advgrid select{width:100%}
+.advgrid input,.advgrid select{width:100%;min-width:0}
 .advfoot{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
 .advfoot .hint{color:var(--dim);font-size:12px}
 /* setkop met logo bij groeperen per set */
@@ -240,10 +257,13 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
   input[type=search],input[type=text]{min-width:0}
   .searchbar{gap:8px}
   .searchbar #q{flex:1 1 100%}
-  .searchbar select{flex:1 1 calc(50% - 4px);min-width:0}
-  .searchbar #go{flex:1 1 100%}
+  .searchbar #go{flex:1 1 calc(60% - 4px)}
+  .searchbar #reset{flex:1 1 calc(40% - 4px)}
   .searchbar .chk{flex:1 1 calc(50% - 4px);font-size:14px}
-  .searchbar #csv,.searchbar #colBtn{flex:1 1 calc(50% - 4px);min-width:0}
+  .stabs{display:flex;width:100%}
+  .stab{flex:1;padding:10px 8px}
+  .settings{position:static;width:100%;margin-top:10px}
+  .hbtns{gap:6px}
   .controls input,.controls select{flex:1 1 100%}
   .count{margin-left:0;flex:1 1 100%}
   .flabel{flex:1 1 100%}
@@ -308,64 +328,55 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
   <symbol id="i-share" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.3 13.3l7.4 4.4M15.7 6.3L8.3 10.7"/></g></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
   <symbol id="i-dl" viewBox="0 0 24 24"><path d="M12 4v10m0 0l-4.5-4.5M12 14l4.5-4.5M4 19h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></g></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h9M19 7h1M4 17h3M13 17h7"/><circle cx="16" cy="7" r="2.4"/><circle cx="9.5" cy="17" r="2.4"/></g></symbol>
 </defs></svg>
 <header>
-  <h1><span class="ball" aria-hidden="true"></span>Pokémon TCG-zoeker</h1>
+  <h1><span class="ball" aria-hidden="true"></span>Pokémon TCG-zoeker
+    <span class="hbtns">
+      <button id="colBtn" title="Bekijk je bewaarde kaarten en hun totale waarde"><svg class="ico" aria-hidden="true"><use href="#i-ballfill"/></svg>Collectie</button>
+      <button class="iconbtn" id="gearBtn" title="Instellingen" aria-label="Instellingen"><svg class="ico" aria-hidden="true"><use href="#i-gear"/></svg></button>
+    </span>
+  </h1>
   <div class="sub">Vind elke kaart — met afbeelding, set, rariteit en actuele marktprijzen,
   Engels én Japans.</div>
-  <div class="searchbar">
+  <div class="settings" id="settingspanel">
+    <label>Thema
+      <select id="theme" aria-label="Thema kiezen">
+        <option value="auto">Systeem (licht/donker)</option>
+        <option value="dark">Donker</option>
+        <option value="light">Licht</option>
+        <option value="sunset">Zonsondergang</option>
+        <option value="jeroen">Jeroen (fossielen)</option>
+      </select></label>
+    <label>Zoekmodus
+      <select id="mode">
+        <option value="auto">Naam, anders setnaam</option>
+        <option value="name">Alleen kaartnaam</option>
+        <option value="set">Alleen setnaam</option>
+      </select></label>
+    <label>Bron van kaartgegevens
+      <select id="src">
+        <option value="auto">Automatisch</option>
+        <option value="ptcg">pokemontcg.io</option>
+        <option value="tcgdex">TCGdex</option>
+      </select></label>
+  </div>
+  <div class="stabs" role="tablist">
+    <button class="stab on" id="tabName" role="tab" aria-selected="true"><svg class="ico s" aria-hidden="true"><use href="#i-lens"/></svg>Zoeken</button>
+    <button class="stab" id="tabAdv" role="tab" aria-selected="false"><svg class="ico s" aria-hidden="true"><use href="#i-sliders"/></svg>Op kenmerken</button>
+  </div>
+  <div class="searchbar" id="searchName">
     <input type="text" id="q" placeholder="Bijv.: Omanyte, Kabutops, Aerodactyl" autocomplete="off" list="setlist">
     <datalist id="setlist"></datalist>
-    <select id="mode">
-      <option value="auto">Zoek: naam, anders set</option>
-      <option value="name">Zoek: alleen kaartnaam</option>
-      <option value="set">Zoek: alleen setnaam</option>
-    </select>
-    <select id="src">
-      <option value="auto">Bron: automatisch</option>
-      <option value="ptcg">Bron: pokemontcg.io</option>
-      <option value="tcgdex">Bron: TCGdex</option>
-    </select>
     <button class="primary" id="go"><svg class="ico" aria-hidden="true"><use href="#i-lens"/></svg>Zoeken</button>
     <button id="reset" title="Maak het zoekveld en de zoekkenmerken leeg"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg>Wis</button>
     <label class="chk"><input type="checkbox" id="wantEn" checked> Engelse kaarten</label>
     <label class="chk"><input type="checkbox" id="wantJp" checked> Japanse kaarten</label>
-    <button id="csv" disabled><svg class="ico" aria-hidden="true"><use href="#i-dl"/></svg>Exporteer CSV</button>
-    <button id="colBtn" title="Bekijk je bewaarde kaarten en hun totale waarde"><svg class="ico" aria-hidden="true"><use href="#i-ballfill"/></svg>Collectie</button>
-    <select id="theme" title="Kies een thema" aria-label="Thema kiezen">
-      <option value="auto">Thema: systeem</option>
-      <option value="dark">Thema: donker</option>
-      <option value="light">Thema: licht</option>
-      <option value="sunset">Thema: zonsondergang</option>
-      <option value="jeroen">Thema: Jeroen (fossielen)</option>
-    </select>
   </div>
-  <div class="examples">
-    <span class="exlbl">Snel proberen:</span>
-    <a class="schip" data-ex="Omanyte, Omastar">Omanyte + Omastar</a>
-    <a class="schip" data-ex="Aerodactyl">Aerodactyl</a>
-    <a class="schip" data-ex="Rare Candy">Rare Candy</a>
-    <a class="schip" data-ex="Fossil" data-mode="set">Hele set: Fossil</a>
-    <a class="schip" id="browseSets"><svg class="ico s" aria-hidden="true"><use href="#i-cards"/></svg>Alle sets</a>
-    <a class="schip" id="advToggle"><svg class="ico s" aria-hidden="true"><use href="#i-lens"/></svg>Zoek op kenmerken</a>
-    <a class="schip" id="helpToggle"><svg class="ico s" aria-hidden="true"><use href="#i-help"/></svg>Uitleg</a>
-  </div>
-  <div class="helppanel" id="helppanel">
-    <b>Zo werkt het.</b> Typ één of meer namen, gescheiden door komma's, en klik op Zoeken.
-    Werkt ook voor Trainer- en Item-kaarten — bijvoorbeeld
-    <a data-ex="Mysterious Fossil">Mysterious Fossil</a>.
-    De Japanse naam wordt automatisch opgezocht; lukt dat niet, geef hem dan zelf mee met een
-    schuine streep — bijvoorbeeld <a data-ex="Professor's Research /博士の研究">Professor's Research
-    / 博士の研究</a>. Een Japanse zoekterm mag je ook los intypen.
-    <br><b>Collectie.</b> Met <b>+ Collectie</b> bewaar je een kaart op dit apparaat; via de knop
-    <b>Collectie</b> bekijk je alles terug, inclusief geschatte totale waarde en je voortgang
-    per set. <b>Deel</b> kopieert een link die dezelfde zoekopdracht opent. Het pijltje
-    ▲/▼ bij een prijs laat zien of de trendprijs boven of onder het 30-dagengemiddelde ligt.
-  </div>
-  <div class="setbrowser" id="setbrowser"></div>
   <div class="advpanel" id="advpanel">
     <p class="shint" style="margin:0 0 8px;color:var(--dim);font-size:12.5px"><b>Zoek op kenmerken</b>
-    is een nieuwe zoekopdracht door de volledige Engelse database — je hoeft geen naam te weten.
+    doorzoekt de volledige Engelse database — je hoeft geen naam te weten.
     Wil je juist <i>binnen je huidige resultaten</i> filteren? Gebruik de balk „Filter resultaten”
     boven de kaarten.</p>
     <div class="advgrid">
@@ -388,6 +399,28 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
       <span class="hint">Bron: pokemontcg.io — alleen Engelse kaarten.</span>
     </div>
   </div>
+  <div class="examples">
+    <span class="exlbl">Snel proberen:</span>
+    <a class="schip" data-ex="Omanyte, Omastar">Omanyte + Omastar</a>
+    <a class="schip" data-ex="Aerodactyl">Aerodactyl</a>
+    <a class="schip" data-ex="Rare Candy">Rare Candy</a>
+    <a class="schip" data-ex="Fossil" data-mode="set">Hele set: Fossil</a>
+    <a class="schip" id="browseSets"><svg class="ico s" aria-hidden="true"><use href="#i-cards"/></svg>Alle sets</a>
+    <a class="schip" id="helpToggle"><svg class="ico s" aria-hidden="true"><use href="#i-help"/></svg>Uitleg</a>
+  </div>
+  <div class="helppanel" id="helppanel">
+    <b>Zo werkt het.</b> Typ één of meer namen, gescheiden door komma's, en klik op Zoeken.
+    Werkt ook voor Trainer- en Item-kaarten — bijvoorbeeld
+    <a data-ex="Mysterious Fossil">Mysterious Fossil</a>.
+    De Japanse naam wordt automatisch opgezocht; lukt dat niet, geef hem dan zelf mee met een
+    schuine streep — bijvoorbeeld <a data-ex="Professor's Research /博士の研究">Professor's Research
+    / 博士の研究</a>. Een Japanse zoekterm mag je ook los intypen.
+    <br><b>Collectie.</b> Met <b>+ Collectie</b> bewaar je een kaart op dit apparaat; via de knop
+    <b>Collectie</b> bekijk je alles terug, inclusief geschatte totale waarde en je voortgang
+    per set. <b>Deel</b> kopieert een link die dezelfde zoekopdracht opent. Het pijltje
+    ▲/▼ bij een prijs laat zien of de trendprijs boven of onder het 30-dagengemiddelde ligt.
+  </div>
+  <div class="setbrowser" id="setbrowser"></div>
 </header>
 
 <div class="status" id="status"></div>
@@ -418,6 +451,7 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
   <select id="typ" title="Filter op energietype">
     <option value="">Alle types</option>
   </select>
+  <button id="csv" disabled><svg class="ico" aria-hidden="true"><use href="#i-dl"/></svg>Exporteer CSV</button>
   <button id="filterReset" title="Zet alle filters terug"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg>Wis filters</button>
   <button id="share" title="Kopieer een deelbare link naar deze zoekopdracht"><svg class="ico" aria-hidden="true"><use href="#i-share"/></svg>Deel</button>
   <span class="count" id="count"></span>
@@ -427,7 +461,7 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
 
 <div class="modal" id="modal">
   <div class="modalbox" role="dialog" aria-modal="true" aria-label="Kaartdetails">
-    <button class="close" id="modalClose" title="Sluiten (Esc)" aria-label="Sluiten">✕</button>
+    <button class="close" id="modalClose" title="Sluiten (Esc)" aria-label="Sluiten"><svg class="ico" style="margin:0;vertical-align:-2px" aria-hidden="true"><use href="#i-x"/></svg></button>
     <button class="nav prev" id="modalPrev" title="Vorige (←)" aria-label="Vorige kaart">‹</button>
     <button class="nav next" id="modalNext" title="Volgende (→)" aria-label="Volgende kaart">›</button>
     <div id="modalBody"></div>
@@ -1106,10 +1140,20 @@ function renderSetBrowser(sets){
            .map(s => `<a class="schip" data-set="${h(s.name)}">${h(s.name)}</a>`).join('') +
       '</div></div>').join('');
 }
-// de drie invouwpanelen onder de zoekbalk: er is er altijd hooguit één open
+// de invouwpanelen (sets, uitleg, instellingen): er is er altijd hooguit één open
 function closePanels(){
-  ['setbrowser','advpanel','helppanel'].forEach(p =>
+  ['setbrowser','helppanel','settingspanel'].forEach(p =>
     document.getElementById(p).classList.remove('on'));
+}
+// zoek-tabbladen: op naam (standaard) of op kenmerken
+function showTab(adv){
+  document.getElementById('tabName').classList.toggle('on', !adv);
+  document.getElementById('tabName').setAttribute('aria-selected', String(!adv));
+  document.getElementById('tabAdv').classList.toggle('on', adv);
+  document.getElementById('tabAdv').setAttribute('aria-selected', String(adv));
+  document.getElementById('searchName').style.display = adv ? 'none' : '';
+  document.getElementById('advpanel').classList.toggle('on', adv);
+  if (adv) loadAdvLists();
 }
 function togglePanel(id){
   const el = document.getElementById(id);
@@ -1221,9 +1265,9 @@ async function runAdvanced(){
   if (!q){ setStatus('Kies eerst minstens één kenmerk om op te zoeken.'); return; }
   return runAdvancedRaw(q);
 }
-document.getElementById('advToggle').addEventListener('click', () => {
-  if (togglePanel('advpanel')) loadAdvLists();
-});
+document.getElementById('tabName').addEventListener('click', () => showTab(false));
+document.getElementById('tabAdv').addEventListener('click', () => showTab(true));
+document.getElementById('gearBtn').addEventListener('click', () => togglePanel('settingspanel'));
 document.getElementById('helpToggle').addEventListener('click', () => togglePanel('helppanel'));
 document.getElementById('advGo').addEventListener('click', runAdvanced);
 document.getElementById('advpanel').addEventListener('keydown', e => {
@@ -1279,13 +1323,14 @@ document.querySelectorAll('[data-ex]').forEach(a => a.addEventListener('click', 
   document.getElementById('q').value = a.dataset.ex;
   document.getElementById('mode').value = a.dataset.mode || 'auto';
   closePanels();
+  showTab(false);
   run();
 }));
 
 // Deelbare link geopend? ?q= start meteen dezelfde zoekopdracht, ?aq= een geavanceerde query.
 (function(){
   const p = new URLSearchParams(location.search);
-  if (p.get('aq')){ runAdvancedRaw(p.get('aq')); return; }
+  if (p.get('aq')){ showTab(true); runAdvancedRaw(p.get('aq')); return; }
   if (!p.get('q')) return;
   document.getElementById('q').value = p.get('q');
   if (p.get('mode')) document.getElementById('mode').value = p.get('mode');
