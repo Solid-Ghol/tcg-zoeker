@@ -1,7 +1,8 @@
 # Pokémon TCG-zoeker
 
 Een Pokémon-kaartzoeker die per zoekterm alle kaarten ophaalt — met afbeelding, set,
-kaartnummer, rariteit en actuele marktprijzen (Cardmarket, TCGplayer). Engelse en Japanse
+kaartnummer, rariteit en actuele marktprijzen (Cardmarket als hoofdbron, met per kaart een
+PriceCharting-link voor ungraded- en graded-prijzen). Engelse en Japanse
 kaarten worden apart opgehaald. Alles zit in één `index.html`; er is geen server of database.
 
 ## Uitgangspunt: werkt lekker op mobiel

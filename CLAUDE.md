@@ -66,3 +66,6 @@ Dit bestand is voor Claude (en andere ontwikkelaars): huisregels die bij elke wi
   krijgt visueel accent (`a.pr.main`). Directe links voor pokemontcg.io-kaarten volgen het
   vaste patroon `https://prices.pokemontcg.io/cardmarket/{id}` — bouw ze desnoods zelf uit
   het kaart-id, dan komt de knop ook zonder prijsblok op de juiste kaart uit.
+- **TCGplayer is bewust verwijderd** uit de interface (expliciete wens): Cardmarket is main,
+  PriceCharting (ungraded/graded) is sub. De USD-prijs wordt nog wel stilletjes opgehaald als
+  terugval voor prijssortering en collectiewaarde wanneer een euroteken ontbreekt — niet tonen.
