@@ -32,6 +32,13 @@ voordat je hem online zet.
   wat er in je resultaten zit.
 - **Energietypes** krijgen hun herkenbare kleur (Fire = rood, Water = blauw, Lightning = geel,
   enzovoort), zowel op de kaart als in het detailvenster en de CSV-export.
+- **Geavanceerd zoeken** — de link onder de zoekbalk opent een paneel dat de volledige Engelse
+  database rechtstreeks bevraagt op soort kaart, energietype, subtype (ex, VMAX, …), rariteit,
+  set en HP-bereik. Er is geen naam nodig.
+- **Kaartdetails** — het detailvenster toont naast set en prijzen ook soort/subtype, HP,
+  zwakte/weerstand, terugtrekkosten, de aanvallen (met energiekosten en schade) en de illustrator.
+- **Set-weergave** — groepeer resultaten per set (met setlogo, jaar en aantal) en sorteer op
+  kaartnummer. Wie op een setnaam zoekt, krijgt deze weergave automatisch.
 
 ## Thema's
 

@@ -108,6 +108,21 @@ label.chk{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--d
 .schip{font-size:12.5px;border:1px solid var(--line);border-radius:999px;padding:3px 10px;
   cursor:pointer;background:var(--panel);color:var(--txt)}
 @media (hover:hover){ .schip:hover{border-color:var(--accent);color:var(--accent)} }
+/* geavanceerd zoeken: API-query op type, rariteit, subtype, HP en set */
+.advpanel{display:none;margin-top:12px;padding:14px;border:1px solid var(--line);
+  border-radius:10px;background:var(--panel2)}
+.advpanel.on{display:block}
+.advgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+.advgrid label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--dim)}
+.advgrid input,.advgrid select{width:100%}
+.advfoot{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.advfoot .hint{color:var(--dim);font-size:12px}
+/* setkop met logo bij groeperen per set */
+h2 img.setlogo{height:26px;width:auto;vertical-align:middle}
+/* kleine energie-kostenbolletjes in de aanvallentabel */
+.cost{display:inline-flex;gap:3px;vertical-align:middle;margin-right:6px}
+.cost i{width:13px;height:13px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.25)}
+.atk-eff{color:var(--dim);font-size:12.5px;padding:0 0 8px}
 .status{padding:10px 24px;font-size:13px;color:var(--dim);border-bottom:1px solid var(--line);
   background:var(--panel);display:none}
 .status.on{display:block}
@@ -290,13 +305,39 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
     <a data-ex="Mysterious Fossil">Trainerkaart: Mysterious Fossil</a> ·
     <a data-ex="Fossil" data-mode="set">Hele set: Fossil</a> ·
     <a data-ex="Rare Candy">Rare Candy</a> ·
-    <a id="browseSets"><b>📚 Blader door alle sets</b></a>
+    <a id="browseSets"><b>📚 Blader door alle sets</b></a> ·
+    <a id="advToggle"><b>🎛️ Geavanceerd zoeken</b></a>
     <span class="more"><br>Werkt ook voor Trainer- en Item-kaarten. De Japanse naam wordt automatisch opgezocht;
     lukt dat niet, geef hem dan zelf mee met een schuine streep — bijvoorbeeld
     <a data-ex="Professor's Research /博士の研究">Professor's Research / 博士の研究</a>.
     Een Japanse zoekterm mag je ook los intypen.</span>
   </div>
   <div class="setbrowser" id="setbrowser"></div>
+  <div class="advpanel" id="advpanel">
+    <div class="advgrid">
+      <label>Naam bevat
+        <input type="text" id="advName" placeholder="bijv. char" autocomplete="off"></label>
+      <label>Soort kaart
+        <select id="advSuper"><option value="">Alle</option>
+          <option>Pokémon</option><option>Trainer</option><option>Energy</option></select></label>
+      <label>Energietype
+        <select id="advType"><option value="">Alle</option></select></label>
+      <label>Subtype
+        <select id="advSub"><option value="">Alle</option></select></label>
+      <label>Rariteit
+        <select id="advRar"><option value="">Alle</option></select></label>
+      <label>Set
+        <input type="text" id="advSet" list="setlist" placeholder="setnaam" autocomplete="off"></label>
+      <label>HP vanaf
+        <input type="number" id="advHpMin" min="0" step="10" placeholder="bijv. 60"></label>
+      <label>HP t/m
+        <input type="number" id="advHpMax" min="0" step="10" placeholder="bijv. 200"></label>
+    </div>
+    <div class="advfoot">
+      <button class="primary" id="advGo">Zoek kaarten</button>
+      <span class="hint">Doorzoekt de volledige Engelse database (pokemontcg.io) — er is geen naam nodig.</span>
+    </div>
+  </div>
 </header>
 
 <div class="status" id="status"></div>
@@ -305,11 +346,13 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
   <input type="search" id="filter" placeholder="Filter op set, nummer of rariteit…">
   <select id="grp">
     <option value="pokemon">Groep: per Pokémon</option>
+    <option value="set">Groep: per set</option>
     <option value="none">Groep: geen</option>
   </select>
   <select id="sort">
     <option value="date">Sorteer: oudste eerst</option>
     <option value="date_desc">Sorteer: nieuwste eerst</option>
+    <option value="number">Sorteer: kaartnummer</option>
     <option value="price">Sorteer: prijs hoog → laag</option>
     <option value="name">Sorteer: naam (A–Z)</option>
   </select>
@@ -372,6 +415,14 @@ const TYPE_COLORS = {
   Fairy:['#ef8fc4','#3a1029'], Colorless:['#cac6b6','#20201a'],
 };
 const TYPE_ALIAS = { Electric:'Lightning', Dark:'Darkness', Steel:'Metal', Normal:'Colorless' };
+// Energiekosten van een aanval als gekleurde bolletjes.
+function costDots(cost){
+  if (!cost || !cost.length) return '';
+  return '<span class="cost">' + cost.map(t => {
+    const c = TYPE_COLORS[TYPE_ALIAS[t] || t];
+    return `<i style="background:${c ? c[0] : 'var(--line)'}" title="${h(t)}"></i>`;
+  }).join('') + '</span>';
+}
 function typeChips(types){
   return (types || []).map(t => {
     const c = TYPE_COLORS[TYPE_ALIAS[t] || t];
@@ -409,10 +460,11 @@ function slug(s){
 }
 
 /* ---------- Engelse kaarten: Pokémon TCG API ---------- */
-async function queryEnglish(field, term){
+async function queryEnglish(rawQ){
   const base = 'https://api.pokemontcg.io/v2/cards';
-  const q = encodeURIComponent(`${field}:"${term}"`);
-  const sel = 'id,name,number,rarity,types,set,images,tcgplayer,cardmarket';
+  const q = encodeURIComponent(rawQ);
+  const sel = 'id,name,number,rarity,types,supertype,subtypes,hp,attacks,weaknesses,' +
+              'resistances,retreatCost,artist,set,images,tcgplayer,cardmarket';
   let page = 1, all = [];
   while (page <= 4){
     const d = await getJSON(`${base}?q=${q}&page=${page}&pageSize=250&select=${sel}&orderBy=set.releaseDate`);
@@ -422,33 +474,39 @@ async function queryEnglish(field, term){
   }
   return all;
 }
+function mapPtcg(c, qLabel){
+  const tp = c.tcgplayer && c.tcgplayer.prices ? Object.values(c.tcgplayer.prices)[0] : null;
+  const cm = c.cardmarket && c.cardmarket.prices ? c.cardmarket.prices : null;
+  return {
+    q: qLabel, region: 'EN', name: c.name,
+    set: c.set ? c.set.name : '', setSeries: c.set ? c.set.series : '',
+    setLogo: c.set && c.set.images ? c.set.images.logo : '',
+    date: c.set ? c.set.releaseDate : '', number: c.number,
+    total: c.set && c.set.printedTotal ? c.set.printedTotal : '',
+    rarity: c.rarity || '', types: c.types || [],
+    supertype: c.supertype || '', subtypes: c.subtypes || [],
+    hp: c.hp || '', attacks: c.attacks || [],
+    weaknesses: c.weaknesses || [], resistances: c.resistances || [],
+    retreat: c.retreatCost ? c.retreatCost.length : null, artist: c.artist || '',
+    img: c.images ? c.images.small : '', imgBig: c.images ? c.images.large : '',
+    usd: tp ? (tp.market != null ? tp.market : tp.mid) : null,
+    eur: cm ? (cm.trendPrice != null ? cm.trendPrice : cm.averageSellPrice) : null,
+    cmLow: cm ? cm.lowPrice : null, cmAvg30: cm ? cm.avg30 : null,
+    cmUrl: (c.cardmarket && c.cardmarket.url) || '',
+    tpUrl: (c.tcgplayer && c.tcgplayer.url) || '',
+  };
+}
 async function fetchEnglishPtcg(name, mode){
   let all = [], via = 'naam';
   if (mode !== 'set'){
-    all = await queryEnglish('name', name);
+    all = await queryEnglish(`name:"${name}"`);
   }
   if (!all.length && mode !== 'name'){
-    const bySet = await queryEnglish('set.name', name);
+    const bySet = await queryEnglish(`set.name:"${name}"`);
     if (bySet.length){ all = bySet; via = 'set'; }
   }
   fetchEnglish.via = via;
-  return all.map(c => {
-    const tp = c.tcgplayer && c.tcgplayer.prices ? Object.values(c.tcgplayer.prices)[0] : null;
-    const cm = c.cardmarket && c.cardmarket.prices ? c.cardmarket.prices : null;
-    return {
-      q: name, region: 'EN', name: c.name,
-      set: c.set ? c.set.name : '', setSeries: c.set ? c.set.series : '',
-      date: c.set ? c.set.releaseDate : '', number: c.number,
-      total: c.set && c.set.printedTotal ? c.set.printedTotal : '',
-      rarity: c.rarity || '', types: c.types || [],
-      img: c.images ? c.images.small : '', imgBig: c.images ? c.images.large : '',
-      usd: tp ? (tp.market != null ? tp.market : tp.mid) : null,
-      eur: cm ? (cm.trendPrice != null ? cm.trendPrice : cm.averageSellPrice) : null,
-      cmLow: cm ? cm.lowPrice : null, cmAvg30: cm ? cm.avg30 : null,
-      cmUrl: (c.cardmarket && c.cardmarket.url) || '',
-      tpUrl: (c.tcgplayer && c.tcgplayer.url) || '',
-    };
-  });
+  return all.map(c => mapPtcg(c, name));
 }
 
 /* ---------- Tweede bron: TCGdex (ook voor Engelse kaarten) ---------- */
@@ -488,6 +546,8 @@ async function fetchTcgdex(name, lang, mode, jpTerm){
       q: name, region: lang === 'ja' ? 'JP' : 'EN', name: c.name,
       set: sets[setId] || setId, setSeries: '', date: '',
       number: c.localId || '', total: '', rarity: '', types: c.types || [],
+      supertype: '', subtypes: [], hp: '', attacks: [], weaknesses: [], resistances: [],
+      retreat: null, artist: '', setLogo: '',
       img: c.image ? c.image + '/low.webp' : '', imgBig: c.image ? c.image + '/high.webp' : '',
       usd: null, eur: null, cmLow: null, cmAvg30: null, cmUrl: '', tpUrl: '', _id: c.id,
     };
@@ -504,6 +564,13 @@ async function addTcgdexPrices(cards, lang, max = 60){
         const d = await getJSON(`https://api.tcgdex.net/v2/${lang}/cards/${c._id}`, 1);
         c.rarity = c.rarity || d.rarity || '';
         if (d.types && d.types.length) c.types = d.types;
+        if (d.hp) c.hp = d.hp;
+        if (d.category) c.supertype = d.category;
+        if (d.attacks) c.attacks = d.attacks.map(a => ({
+          name: a.name || '', cost: a.cost || [], damage: a.damage || '', text: a.effect || ''}));
+        if (d.weaknesses) c.weaknesses = d.weaknesses.map(w => ({type: w.type, value: w.value || ''}));
+        if (d.retreat != null) c.retreat = d.retreat;
+        if (d.illustrator) c.artist = d.illustrator;
         if (d.set && d.set.name) c.set = d.set.name;
         if (d.set && d.set.releaseDate) c.date = d.set.releaseDate;
         const p = d.pricing || d.prices || null;
@@ -625,6 +692,11 @@ async function run(){
   document.getElementById('csv').disabled = !CARDS.length;
   document.getElementById('controls').className = CARDS.length ? 'controls on' : 'controls';
   populateFilters();
+  // een hele set opgehaald? dan is per set + op kaartnummer de logische weergave
+  if (CARDS.length && (mode === 'set' || fetchEnglish.via === 'set')){
+    document.getElementById('grp').value = 'set';
+    document.getElementById('sort').value = 'number';
+  }
   const failed = notes.some(n => n.includes('class="err"'));
   setStatus(notes.join(' · ') + (failed
     ? '<br><span class="err">Lukt het ophalen niet? Controleer de internetverbinding — sommige ' +
@@ -713,10 +785,21 @@ function openCard(i){
         ${row('Serie', c.setSeries)}
         ${row('Kaartnummer', c.number ? c.number + (c.total ? ' / ' + c.total : '') : '')}
         ${row('Rariteit', c.rarity)}
+        ${row('Soort', c.supertype ? c.supertype + (c.subtypes && c.subtypes.length ? ' — ' + c.subtypes.join(', ') : '') : '')}
         ${c.types && c.types.length ? `<tr><th>Type</th><td><div class="tags">${typeChips(c.types)}</div></td></tr>` : ''}
+        ${row('HP', c.hp)}
+        ${c.weaknesses && c.weaknesses.length ? `<tr><th>Zwakte</th><td>${c.weaknesses.map(w => typeChips([w.type]) + ' ' + h(w.value || '')).join(' · ')}</td></tr>` : ''}
+        ${c.resistances && c.resistances.length ? `<tr><th>Weerstand</th><td>${c.resistances.map(w => typeChips([w.type]) + ' ' + h(w.value || '')).join(' · ')}</td></tr>` : ''}
+        ${c.retreat != null && c.retreat !== 0 ? row('Terugtrekkosten', c.retreat) : ''}
         ${row('Uitgebracht', c.date)}
+        ${row('Illustrator', c.artist)}
         ${row('Taal', c.region === 'JP' ? 'Japans' : 'Engels')}
       </table>
+      ${c.attacks && c.attacks.length ? `<h4>Aanvallen</h4>
+      <table class="mtab">${c.attacks.map(a => `
+        <tr><th>${costDots(a.cost)}${h(a.name)}</th><td style="text-align:right;font-weight:600">${h(a.damage || '')}</td></tr>
+        ${a.text ? `<tr><td colspan="2" class="atk-eff">${h(a.text)}</td></tr>` : ''}`).join('')}
+      </table>` : ''}
       <h4><a href="${h(cmLink(c))}" target="_blank" rel="noopener">Cardmarket (EUR) ↗</a></h4>
       <table class="mtab">
         <tr><th>Trendprijs</th><td><a href="${h(cmLink(c))}" target="_blank" rel="noopener">${eur(c.eur)}</a></td></tr>
@@ -766,8 +849,11 @@ function render(){
     (!typ || (c.types || []).includes(typ)) &&
     (!f || [c.name,c.set,c.number,c.rarity,c.setSeries,(c.types||[]).join(' ')].join(' ').toLowerCase().includes(f)));
   const price = c => (c.eur != null ? c.eur : (c.usd != null ? c.usd * 0.92 : -1));
+  const numval = n => { const v = parseInt(n, 10); return isNaN(v) ? 1e9 : v; };
   if (sort === 'date') list.sort((a,b) => (a.date||'9999').localeCompare(b.date||'9999'));
   if (sort === 'date_desc') list.sort((a,b) => (b.date||'').localeCompare(a.date||''));
+  if (sort === 'number') list.sort((a,b) => (a.set||'').localeCompare(b.set||'') ||
+    (numval(a.number) - numval(b.number)) || String(a.number).localeCompare(String(b.number)));
   if (sort === 'price') list.sort((a,b) => price(b) - price(a));
   if (sort === 'name') list.sort((a,b) => a.name.localeCompare(b.name) || (a.set||'').localeCompare(b.set||''));
   document.getElementById('count').textContent = list.length + ' van ' + CARDS.length + ' kaarten';
@@ -779,7 +865,22 @@ function render(){
     const g = {};
     list.forEach(c => (g[c.q] = g[c.q] || []).push(c));
     Object.keys(g).forEach(k => {
-      html += `<h2>${k} <small>${g[k].length} kaarten</small></h2>
+      html += `<h2>${h(k)} <small>${g[k].length} kaarten</small></h2>
+               <div class="grid">${g[k].map(cardHTML).join('')}</div>`;
+    });
+  } else if (grp === 'set'){
+    const g = {};
+    list.forEach(c => (g[c.set || 'Onbekende set'] = g[c.set || 'Onbekende set'] || []).push(c));
+    // sets op releasedatum, nieuwste bovenaan
+    Object.keys(g).sort((a,b) => (g[b][0].date||'').localeCompare(g[a][0].date||'')).forEach(k => {
+      const first = g[k][0];
+      const logo = first.setLogo
+        ? `<img class="setlogo" referrerpolicy="no-referrer" src="${h(first.setLogo)}" alt=""
+               onerror="this.remove()"> ` : '';
+      const bits = [first.setSeries, first.date ? first.date.slice(0,4) : '',
+                    g[k].length + (first.total ? ' van ' + first.total : '') + ' kaarten']
+                   .filter(Boolean).join(' · ');
+      html += `<h2>${logo}${h(k)} <small>${h(bits)}</small></h2>
                <div class="grid">${g[k].map(cardHTML).join('')}</div>`;
     });
   } else {
@@ -791,13 +892,16 @@ function render(){
 /* ---------- CSV ---------- */
 function toCSV(){
   const head = ['Pokémon','Regio','Kaartnaam','Set','Serie','Nummer','Totaal','Rariteit','Type',
+                'Soort','HP','Illustrator',
                 'Uitgebracht','Cardmarket trend (EUR)','Cardmarket laagste (EUR)',
                 'Cardmarket gem. 30d (EUR)','TCGplayer market (USD)',
                 'Cardmarket-link','PriceCharting-link','Afbeelding'];
   const esc = v => '"' + String(v == null ? '' : v).replace(/"/g,'""') + '"';
   const lines = [head.map(esc).join(';')];
   CARDS.forEach(c => lines.push([c.q,c.region,c.name,c.set,c.setSeries,c.number,c.total,
-    c.rarity,(c.types||[]).join(' '),c.date,c.eur,c.cmLow,c.cmAvg30,c.usd,
+    c.rarity,(c.types||[]).join(' '),
+    c.supertype + ((c.subtypes||[]).length ? ' — ' + c.subtypes.join(', ') : ''),c.hp,c.artist,
+    c.date,c.eur,c.cmLow,c.cmAvg30,c.usd,
     cmLink(c),pcSearch(c),c.imgBig || c.img].map(esc).join(';')));
   const blob = new Blob(['﻿' + lines.join('\r\n')], {type:'text/csv;charset=utf-8'});
   const a = document.createElement('a');
@@ -849,6 +953,7 @@ function renderSetBrowser(sets){
 async function toggleSetBrowser(){
   const box = document.getElementById('setbrowser');
   if (box.classList.contains('on')){ box.classList.remove('on'); return; }
+  document.getElementById('advpanel').classList.remove('on');
   box.classList.add('on');
   box.innerHTML = '<span class="spinner"></span> Sets laden…';
   try { box.innerHTML = renderSetBrowser(await loadAllSets()); }
@@ -866,6 +971,86 @@ document.getElementById('setbrowser').addEventListener('click', e => {
 });
 // setnamen alvast ophalen voor de autocomplete zodra het zoekveld voor het eerst focus krijgt
 document.getElementById('q').addEventListener('focus', () => loadAllSets().catch(() => {}), {once:true});
+
+/* ---------- geavanceerd zoeken: API-query zonder naam ---------- */
+// Vaste lijsten als vertrekpunt; worden verfijnd met de echte waarden uit de API zodra die laden.
+const SUBTYPES_FALLBACK = ['BREAK','EX','GX','LEGEND','Level-Up','Mega','Prime','Prism Star',
+  'Radiant','Rapid Strike','Single Strike','Stage 1','Stage 2','TAG TEAM','Tera','V','VMAX','VSTAR','ex'];
+const RARITIES_FALLBACK = ['Common','Uncommon','Rare','Rare Holo','Rare Holo EX','Rare Holo GX',
+  'Rare Holo V','Rare Holo VMAX','Rare Ultra','Rare Secret','Illustration Rare',
+  'Special Illustration Rare','Double Rare','Hyper Rare','Ultra Rare','Promo'];
+function fillAdv(id, values){
+  const sel = document.getElementById(id);
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">Alle</option>' +
+    values.map(v => `<option value="${h(v)}">${h(v)}</option>`).join('');
+  if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
+}
+fillAdv('advType', Object.keys(TYPE_COLORS));
+fillAdv('advSub', SUBTYPES_FALLBACK);
+fillAdv('advRar', RARITIES_FALLBACK);
+let advListsLoaded = false;
+async function loadAdvLists(){
+  if (advListsLoaded) return;
+  advListsLoaded = true;
+  // echte lijsten uit de API; bij een fout blijven de vaste lijsten staan
+  getJSON('https://api.pokemontcg.io/v2/subtypes').then(d => fillAdv('advSub', d.data || [])).catch(() => {});
+  getJSON('https://api.pokemontcg.io/v2/rarities').then(d => fillAdv('advRar', d.data || [])).catch(() => {});
+  loadAllSets().catch(() => {});
+}
+function buildAdvQuery(){
+  const v = id => document.getElementById(id).value.trim();
+  const quote = s => /[\s:]/.test(s) ? `"${s}"` : s;
+  const parts = [];
+  if (v('advName')) parts.push(/\s/.test(v('advName')) ? `name:"${v('advName')}"` : `name:*${v('advName')}*`);
+  if (v('advSuper')) parts.push(`supertype:${quote(v('advSuper'))}`);
+  if (v('advType')) parts.push(`types:${quote(v('advType'))}`);
+  if (v('advSub')) parts.push(`subtypes:${quote(v('advSub'))}`);
+  if (v('advRar')) parts.push(`rarity:${quote(v('advRar'))}`);
+  if (v('advSet')) parts.push(`set.name:${quote(v('advSet'))}`);
+  const mn = v('advHpMin'), mx = v('advHpMax');
+  if (mn || mx) parts.push(`hp:[${mn || '*'} TO ${mx || '*'}]`);
+  return parts.join(' ');
+}
+async function runAdvanced(){
+  const q = buildAdvQuery();
+  if (!q){ setStatus('Kies eerst minstens één filter voor geavanceerd zoeken.'); return; }
+  const btn = document.getElementById('advGo');
+  btn.disabled = true;
+  CARDS = [];
+  showSkeleton();
+  setStatus('<span class="spinner"></span> Geavanceerd zoeken…');
+  try {
+    const raw = await queryEnglish(q);
+    CARDS = raw.map(c => mapPtcg(c, c.name));
+    setStatus(`Geavanceerd zoeken: ${CARDS.length} kaart${CARDS.length===1?'':'en'}` +
+      (CARDS.length >= 1000 ? ' (maximum bereikt — verfijn de filters)' : '') +
+      ' — alleen Engelse kaarten. Query: <code>' + h(q) + '</code>');
+  } catch(e){
+    setStatus(`<span class="err">Geavanceerd zoeken mislukt (${h(e.message)})</span>`);
+    OUT.innerHTML = '<p class="empty">Geen kaarten gevonden.</p>';
+    btn.disabled = false;
+    return;
+  }
+  btn.disabled = false;
+  document.getElementById('csv').disabled = !CARDS.length;
+  document.getElementById('controls').className = CARDS.length ? 'controls on' : 'controls';
+  populateFilters();
+  document.getElementById('grp').value = 'set';
+  render();
+}
+document.getElementById('advToggle').addEventListener('click', () => {
+  const p = document.getElementById('advpanel');
+  p.classList.toggle('on');
+  if (p.classList.contains('on')){
+    document.getElementById('setbrowser').classList.remove('on');
+    loadAdvLists();
+  }
+});
+document.getElementById('advGo').addEventListener('click', runAdvanced);
+document.getElementById('advpanel').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.tagName !== 'BUTTON') runAdvanced();
+});
 
 // thema: keuze toepassen en onthouden
 const themeSel = document.getElementById('theme');
