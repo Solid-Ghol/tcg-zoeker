@@ -202,6 +202,10 @@ h2 small{color:var(--dim);font-weight:400;font-size:13px}
   a.pr:hover{border-color:var(--accent);text-decoration:none}
   a.pr:hover b{color:var(--accent)}
 }
+/* Cardmarket is de hoofd-marktplaats: die pil valt op */
+a.pr.main{border-color:var(--line);background:var(--panel2);box-shadow:inset 0 0 0 1px var(--accent)}
+a.pr.main span{color:var(--accent)}
+.btn.main{border-color:var(--accent);color:var(--accent);font-weight:600}
 a.pr:active{background:var(--line)}
 .pr b{display:block;font-size:13px}
 .pr span{color:var(--dim);font-size:9.5px;text-transform:uppercase;letter-spacing:.03em;
@@ -581,8 +585,12 @@ function mapPtcg(c, qLabel){
     usd: tp ? (tp.market != null ? tp.market : tp.mid) : null,
     eur: cm ? (cm.trendPrice != null ? cm.trendPrice : cm.averageSellPrice) : null,
     cmLow: cm ? cm.lowPrice : null, cmAvg30: cm ? cm.avg30 : null,
-    cmUrl: (c.cardmarket && c.cardmarket.url) || '',
-    tpUrl: (c.tcgplayer && c.tcgplayer.url) || '',
+    // pokemontcg.io-links volgen altijd dit vaste patroon; bouw ze desnoods zelf op,
+    // zodat óók kaarten zonder prijsblok direct op de juiste Cardmarket-pagina uitkomen
+    cmUrl: (c.cardmarket && c.cardmarket.url) ||
+           (c.id ? 'https://prices.pokemontcg.io/cardmarket/' + c.id : ''),
+    tpUrl: (c.tcgplayer && c.tcgplayer.url) ||
+           (c.id ? 'https://prices.pokemontcg.io/tcgplayer/' + c.id : ''),
   };
 }
 async function fetchEnglishPtcg(name, mode){
@@ -837,7 +845,8 @@ function cmTitle(c){
   if (c.cmLow != null) bits.push('laagste ' + money(c.cmLow,'EUR'));
   if (c.eur != null) bits.push('trend ' + money(c.eur,'EUR'));
   if (c.cmAvg30 != null) bits.push('gem. 30 dagen ' + money(c.cmAvg30,'EUR'));
-  return bits.length ? 'Cardmarket — ' + bits.join(' · ') : 'Cardmarket: geen prijsdata';
+  const head = c.cmUrl ? 'Cardmarket — direct naar deze kaart' : 'Cardmarket — zoekresultaten';
+  return bits.length ? head + ' · ' + bits.join(' · ') : head;
 }
 /* ---------- verzamellijst (opgeslagen in de browser) ---------- */
 let COL = {};
@@ -962,8 +971,8 @@ function cardHTML(c){
       <button class="colbtn${colHas(c) ? ' in' : ''}" data-col="${c._v}"
         title="${colHas(c) ? 'Verwijder deze kaart uit je collectie' : 'Bewaar deze kaart in je collectie (op dit apparaat)'}">${ico('i-ball', true)}${colHas(c) ? '✓ In collectie' : '+ Collectie'}</button>
       <div class="prices">
-        <a class="pr" href="${h(cmLink(c))}" target="_blank" rel="noopener"
-           title="${h(cmTitle(c))} — klik om op Cardmarket te openen"><b>${money(c.eur,'EUR')}${trendArrow(c)}</b><span>Cardmarket ↗</span></a>
+        <a class="pr main" href="${h(cmLink(c))}" target="_blank" rel="noopener"
+           title="${h(cmTitle(c))}"><b>${money(c.eur,'EUR')}${trendArrow(c)}</b><span>Cardmarket ↗</span></a>
         <a class="pr" href="${h(tpLink(c))}" target="_blank" rel="noopener"
            title="Klik om op TCGplayer te openen"><b>${money(c.usd,'USD')}</b><span>TCGplayer ↗</span></a>
       </div>
@@ -1021,7 +1030,7 @@ function openCard(i){
       </table>
       <div class="mlinks">
         <button class="btn" id="mcol">${ico('i-ball')}${colHas(c) ? '✓ In collectie' : '+ Bewaar in collectie'}</button>
-        <a class="btn" href="${h(cmLink(c))}" target="_blank" rel="noopener">Bekijk op Cardmarket</a>
+        <a class="btn main" href="${h(cmLink(c))}" target="_blank" rel="noopener">${c.cmUrl ? 'Bekijk deze kaart op Cardmarket' : 'Zoek op Cardmarket'}</a>
         ${c.tpUrl ? `<a class="btn" href="${h(c.tpUrl)}" target="_blank" rel="noopener">TCGplayer</a>` : ''}
         <a class="btn" href="${h(pcSearch(c))}" target="_blank" rel="noopener">PriceCharting</a>
         ${c.imgBig ? `<a class="btn" href="${h(c.imgBig)}" target="_blank" rel="noopener">Afbeelding</a>` : ''}
