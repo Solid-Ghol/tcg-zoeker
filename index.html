@@ -402,6 +402,8 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
     <b>Zo werkt het.</b> Typ één of meer namen, gescheiden door komma's, en klik op Zoeken.
     Werkt ook voor Trainer- en Item-kaarten — bijvoorbeeld
     <a data-ex="Mysterious Fossil">Mysterious Fossil</a>.
+    Ken je het kaartnummer? Zet het erachter om meteen die versie te openen — bijvoorbeeld
+    <a data-ex="Remoraid 033/182">Remoraid 033/182</a> of <a data-ex="Pikachu 58">Pikachu 58</a>.
     De Japanse naam wordt automatisch opgezocht; lukt dat niet, geef hem dan zelf mee met een
     schuine streep — bijvoorbeeld <a data-ex="Professor's Research /博士の研究">Professor's Research
     / 博士の研究</a>. Een Japanse zoekterm mag je ook los intypen.
@@ -828,13 +830,27 @@ async function run(){
   const entries = qRaw.split(',')
       .map(s => s.trim()).filter(Boolean)
       .map(s => {
+        // Trailing kaartnummer eraf halen: "Remoraid 033/182", "Pikachu 58", "Lugia TG05".
+        // Zo botst de "/" van een kaartnummer niet met de scheiding voor een Japanse naam,
+        // en kunnen we daarna meteen de exacte kaart openen.
+        let cardNo = '';
+        const m = s.match(/\s+([A-Za-z]{0,3}\d{1,4}(?:\/\d{1,4})?)$/);
+        if (m){ cardNo = m[1]; s = s.slice(0, m.index).trim(); }
+        // Overige "/" = optionele Japanse naam ("Naam / 日本語").
         const parts = s.split('/');
         const left = parts[0].trim();
         const right = parts.slice(1).join('/').trim();
-        return { term: left, ja: right || '' };
+        return { term: left, ja: right || '', cardNo };
       });
   if (!entries.length) return;
   if (COLVIEW){ COLVIEW = false; SAVEDVIEW = null; updateColBtn(); }  // nieuwe zoekopdracht sluit de collectieweergave
+  // Getypt kaartnummer? Dan dezelfde "open de exacte kaart"-logica als bij de foto gebruiken.
+  // Een lopende foto-scan (source 'photo', #q zonder nummer) laten we ongemoeid.
+  if (!(PHOTO_MATCH && PHOTO_MATCH.source === 'photo')){
+    PHOTO_MATCH = (entries.length === 1 && entries[0].cardNo)
+      ? { name: entries[0].term, number: entries[0].cardNo, set: '', source: 'typed' }
+      : null;
+  }
   updateURL();
   const mode = document.getElementById('mode').value;
   const prefer = document.getElementById('src').value;
@@ -1433,7 +1449,8 @@ async function identifyFromPhoto(file){
     if (!r.ok) throw new Error((data && data.error) || ('endpoint gaf status ' + r.status));
     const name = (data.name || '').toString().trim();
     if (!name) throw new Error('geen kaart herkend op de foto — probeer een scherpere foto');
-    PHOTO_MATCH = { name, number: (data.number || '').toString().trim(), set: (data.set || '').toString().trim() };
+    PHOTO_MATCH = { name, number: (data.number || '').toString().trim(),
+                    set: (data.set || '').toString().trim(), source: 'photo' };
     hideToast();
     document.getElementById('q').value = name;
     document.getElementById('mode').value = 'auto';
@@ -1448,19 +1465,27 @@ async function identifyFromPhoto(file){
 // Wordt tijdens het tussentijds tonen (run -> partial) aangeroepen; opent hooguit één keer.
 function tryOpenPhotoMatch(){
   if (!PHOTO_MATCH || !PHOTO_MATCH.number) return false;
-  const { name, number, set } = PHOTO_MATCH;
+  const { name, number, set, source } = PHOTO_MATCH;
   // Kaartnummer normaliseren: alleen het deel vóór de streep ("58/102" -> "58"),
   // zonder spaties en zonder voorloopnullen ("058" -> "58"), hoofdletterongevoelig.
   const norm = s => String(s || '').toLowerCase().trim().split('/')[0].replace(/\s+/g, '').replace(/^0+(?=\d)/, '');
-  const setMatch = c => !set || (c.set || '').toLowerCase().includes(set.toLowerCase()) ||
-                        set.toLowerCase().includes((c.set || '').toLowerCase());
-  let idx = VIEW.findIndex(c => norm(c.number) === norm(number) && setMatch(c));
-  if (idx < 0) idx = VIEW.findIndex(c => norm(c.number) === norm(number));
+  // Het deel ná de streep ("033/182" -> "182") is het settotaal; daarmee kiezen we de juiste set.
+  const totalOf = s => { const t = String(s || '').split('/')[1]; return t ? t.replace(/[^\d]/g, '').replace(/^0+(?=\d)/, '') : ''; };
+  const wantTotal = totalOf(number);
+  const numOk = c => norm(c.number) === norm(number);
+  const setMatch = c => !set || (c.set || '').toLowerCase().includes(String(set).toLowerCase()) ||
+                        String(set).toLowerCase().includes((c.set || '').toLowerCase());
+  let idx = -1;
+  if (wantTotal) idx = VIEW.findIndex(c => numOk(c) && String(c.total || '').replace(/^0+(?=\d)/, '') === wantTotal);
+  if (idx < 0) idx = VIEW.findIndex(c => numOk(c) && setMatch(c));
+  if (idx < 0) idx = VIEW.findIndex(c => numOk(c));
   if (idx < 0) return false;
   PHOTO_MATCH = null;
   openCard(idx);
-  toast('Herkend: <b>' + h(name) + '</b>' + ' · #' + h(number) + (set ? ' · ' + h(set) : '') +
-    ' — de kaart staat open. Klopt het niet? Pas de zoekterm hierboven aan.', 9000);
+  if (source === 'photo'){
+    toast('Herkend: <b>' + h(name) + '</b>' + ' · #' + h(number) + (set ? ' · ' + h(set) : '') +
+      ' — de kaart staat open. Klopt het niet? Pas de zoekterm hierboven aan.', 9000);
+  }
   return true;
 }
 // Na afloop van de zoekactie: is de kaart nog niet geopend (geen exacte match), meld dat kort.
