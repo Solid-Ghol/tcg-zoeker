@@ -302,6 +302,9 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
     <option value="EN">Alleen Engels</option>
     <option value="JP">Alleen Japans</option>
   </select>
+  <select id="rar" title="Filter op rariteit / kaarttype">
+    <option value="">Alle rariteiten</option>
+  </select>
   <span class="count" id="count"></span>
 </div>
 
@@ -584,6 +587,7 @@ async function run(){
   document.getElementById('go').disabled = false;
   document.getElementById('csv').disabled = !CARDS.length;
   document.getElementById('controls').className = CARDS.length ? 'controls on' : 'controls';
+  populateRarities();
   const failed = notes.some(n => n.includes('class="err"'));
   setStatus(notes.join(' · ') + (failed
     ? '<br><span class="err">Lukt het ophalen niet? Controleer de internetverbinding — sommige ' +
@@ -698,12 +702,23 @@ function openCard(i){
 }
 function closeCard(){ document.getElementById('modal').classList.remove('on'); MODAL_I = -1; }
 function stepCard(d){ if (MODAL_I >= 0) openCard((MODAL_I + d + VIEW.length) % VIEW.length); }
+// Vult het rariteitsmenu met de rariteiten die daadwerkelijk in de resultaten voorkomen.
+function populateRarities(){
+  const sel = document.getElementById('rar');
+  const prev = sel.value;
+  const rs = [...new Set(CARDS.map(c => c.rarity).filter(Boolean))].sort((a,b) => a.localeCompare(b));
+  sel.innerHTML = '<option value="">Alle rariteiten</option>' +
+    rs.map(r => `<option value="${h(r)}">${h(r)}</option>`).join('');
+  sel.value = rs.includes(prev) ? prev : '';   // eerdere keuze behouden waar het kan
+}
 function render(){
   const f = document.getElementById('filter').value.toLowerCase().trim();
   const reg = document.getElementById('reg').value;
+  const rar = document.getElementById('rar').value;
   const sort = document.getElementById('sort').value;
   const grp = document.getElementById('grp').value;
   let list = CARDS.filter(c => (!reg || c.region === reg) &&
+    (!rar || c.rarity === rar) &&
     (!f || [c.name,c.set,c.number,c.rarity,c.setSeries].join(' ').toLowerCase().includes(f)));
   const price = c => (c.eur != null ? c.eur : (c.usd != null ? c.usd * 0.92 : -1));
   if (sort === 'date') list.sort((a,b) => (a.date||'9999').localeCompare(b.date||'9999'));
@@ -779,7 +794,7 @@ themeSel.addEventListener('change', () => applyTheme(themeSel.value));
 document.getElementById('go').addEventListener('click', run);
 document.getElementById('q').addEventListener('keydown', e => { if (e.key === 'Enter') run(); });
 document.getElementById('csv').addEventListener('click', toCSV);
-['filter','sort','reg','grp'].forEach(id =>
+['filter','sort','reg','grp','rar'].forEach(id =>
   document.getElementById(id).addEventListener('input', render));
 // Vanaf file:// blokkeert Safari (en iOS in het bijzonder) alle verzoeken naar de API's.
 if (location.protocol === 'file:'){
