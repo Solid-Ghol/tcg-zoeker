@@ -86,6 +86,10 @@ h1{margin:0 0 4px;font-size:26px;letter-spacing:-.015em;display:flex;align-items
 .hbtns button.on{border-color:var(--green);color:var(--green)}
 .iconbtn{padding:8px}
 .iconbtn .ico{margin:0;vertical-align:-2px}
+/* Scan-knop (foto-herkenning): valt op met een accentrand zodat hij vindbaar is */
+.scanbtn{border-color:var(--accent);color:var(--accent);font-weight:600}
+.scanbtn .ico{width:17px;height:17px}
+@media (hover:hover){ .scanbtn:not(:disabled):hover{background:var(--panel);border-color:var(--accent)} }
 /* knoppengroep (weergave-schakelaar) */
 .stabs{display:inline-flex;border:1px solid var(--line);border-radius:10px;
   overflow:hidden;background:var(--panel2)}
@@ -341,6 +345,7 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
   <symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></g></symbol>
   <symbol id="i-sliders" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h9M19 7h1M4 17h3M13 17h7"/><circle cx="16" cy="7" r="2.4"/><circle cx="9.5" cy="17" r="2.4"/></g></symbol>
   <symbol id="i-cam" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h2l1.2-1.9a1 1 0 0 1 .85-.47h5.9a1 1 0 0 1 .85.47L19 7h0a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.3"/></g></symbol>
+  <symbol id="i-dex" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3" width="17" height="18" rx="2.5"/><circle cx="8" cy="8" r="2.3"/><path d="M6.5 14h11M6.5 17.3h7"/></g><circle cx="13.6" cy="7.4" r="1" fill="currentColor"/><circle cx="16.4" cy="7.4" r="1" fill="currentColor"/></symbol>
 </defs></svg>
 <header>
   <h1><span class="ball" aria-hidden="true"></span>Pokémon TCG-zoeker
@@ -381,13 +386,13 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
     </label>
   </div>
   <div class="searchbar">
-    <input type="text" id="q" placeholder="Zoek een Pokémon, kaart of set — bijv. Omanyte, Kabutops" autocomplete="off" list="pokelist">
+    <input type="text" id="q" placeholder="Zoek Pokémon, Trainer of set — bijv. Charizard, Rare Candy" autocomplete="off" list="pokelist">
     <datalist id="pokelist"></datalist>
     <input type="hidden" id="mode" value="auto">
     <button class="primary" id="go"><svg class="ico" aria-hidden="true"><use href="#i-lens"/></svg>Zoeken</button>
     <button id="reset" title="Maak het zoekveld leeg"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg>Wis</button>
     <button class="iconbtn" id="browseSets" title="Blader door alle sets" aria-label="Blader door alle sets"><svg class="ico" aria-hidden="true"><use href="#i-cards"/></svg></button>
-    <button class="iconbtn" id="photoBtn" title="Herken een kaart via een foto" aria-label="Herken een kaart via een foto"><svg class="ico" aria-hidden="true"><use href="#i-cam"/></svg></button>
+    <button class="scanbtn" id="photoBtn" title="Herken een kaart via een foto (Pokédex-scan)"><svg class="ico" aria-hidden="true"><use href="#i-dex"/></svg>Scan kaart</button>
     <input type="file" id="photoFile" accept="image/*" capture="environment" hidden>
   </div>
   <div class="helppanel" id="helppanel">
@@ -1218,11 +1223,41 @@ function pokeDisplay(slug){
   if (POKE_DISPLAY[slug]) return POKE_DISPLAY[slug];
   return slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
+// Veelgezochte Trainer-, Item-, Stadium-, Tool- en Fossielkaarten voor de autocomplete.
+// Zoeken werkt met élke naam die je typt (Engelse kaartnaam via pokemontcg.io); deze lijst
+// is puur een handige suggestie, zodat ook niet-Pokémon-kaarten meteen opdoemen.
+const TRAINER_NAMES = [
+  // Supporters
+  "Professor's Research","Professor Oak","Bill","N","Lillie","Cynthia","Marnie","Boss's Orders",
+  "Guzma","Colress","Colress's Experiment","Hau","Iono","Arven","Nemona","Giovanni's Charisma",
+  "Blue's Tactics","Misty's Determination","Roxanne","Judge","Serena","Klara","Melony","Raihan",
+  "Cheren's Care","Bird Keeper",
+  // Items
+  "Rare Candy","Ultra Ball","Quick Ball","Nest Ball","Great Ball","Level Ball","Master Ball",
+  "Switch","Potion","Super Potion","Energy Search","Energy Retrieval","Professor's Letter",
+  "Trainers' Mail","VS Seeker","Battle VIP Pass","Buddy-Buddy Poffin","Earthen Vessel",
+  "Night Stretcher","Super Rod","Rescue Stretcher","Ordinary Rod","Escape Rope","Field Blower",
+  "Tool Scrapper","Pokégear 3.0","Counter Catcher","Lost Vacuum","Cross Switcher",
+  // Stadions
+  "Path to the Peak","Collapsed Stadium","Temple of Sinnoh","Chaotic Swell","Magma Basin",
+  "Artazon","Beach Court","Town Store","Lake Acuity","Jubilife Village",
+  // Tools
+  "Choice Band","Muscle Band","Float Stone","Air Balloon","Forest Seal Stone","Bravery Charm",
+  "Defiance Band","Vitality Band",
+  // Fossielen
+  "Mysterious Fossil","Helix Fossil","Dome Fossil","Old Amber","Root Fossil","Claw Fossil",
+  "Skull Fossil","Armor Fossil",
+];
 let POKENAMES = null;
 async function loadPokeNames(){
   if (POKENAMES) return;
-  const d = await getJSON('https://pokeapi.co/api/v2/pokemon-species?limit=2000');
-  POKENAMES = (d.results || []).map(s => pokeDisplay(s.name)).sort((a, b) => a.localeCompare(b));
+  let mons = [];
+  try {
+    const d = await getJSON('https://pokeapi.co/api/v2/pokemon-species?limit=2000');
+    mons = (d.results || []).map(s => pokeDisplay(s.name));
+  } catch(e){ /* PokéAPI geblokkeerd? dan tonen we in elk geval de Trainer-suggesties */ }
+  // Pokémon én Trainer-kaarten samen, ontdubbeld en alfabetisch.
+  POKENAMES = [...new Set([...mons, ...TRAINER_NAMES])].sort((a, b) => a.localeCompare(b));
   document.getElementById('pokelist').innerHTML =
     POKENAMES.map(n => `<option value="${h(n)}">`).join('');
 }
