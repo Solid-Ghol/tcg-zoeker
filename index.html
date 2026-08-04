@@ -669,6 +669,10 @@ async function addTcgdexPrices(cards, lang, max = 60){
           c.cmLow = digPrice(cm, ['low','lowPrice','low1']);
           c.cmAvg30 = digPrice(cm, ['avg30','avg']);
           c.usd = digPrice(p.tcgplayer || {}, ['marketPrice','market','mid','directLow','lowPrice']);
+          // levert TCGdex een directe productlink mee, gebruik die dan voor de prijsknoppen
+          if (!c.cmUrl && cm && typeof cm.url === 'string' && cm.url.startsWith('http')) c.cmUrl = cm.url;
+          const tp = p.tcgplayer || {};
+          if (!c.tpUrl && typeof tp.url === 'string' && tp.url.startsWith('http')) c.tpUrl = tp.url;
         }
       } catch(e){ /* prijs is optioneel */ }
     }));
@@ -806,18 +810,27 @@ function showSkeleton(n = 8){
     </div>`;
   OUT.innerHTML = `<div class="grid">${one.repeat(n)}</div>`;
 }
+// Externe marktplaatsen kennen geen Japanse tekens: gebruik daar de Engelse naam
+// (de oorspronkelijke zoekterm) zodra de kaartnaam Japans is.
+function marketName(c){
+  return isJapanese(c.name) && c.q && !isJapanese(c.q) ? c.q : c.name;
+}
 function pcSearch(c){
-  return 'https://www.pricecharting.com/search-products?type=prices&q=' +
-         encodeURIComponent(`${c.name} ${c.set} ${c.number}`);
+  // PriceCharting kent Japanse kaarten als aparte "Japanese"-sets; de Japanse setnaam
+  // zelf levert daar niets op, het kaartnummer juist wel.
+  const q = c.region === 'JP'
+    ? `${marketName(c)} japanese ${c.number}`
+    : `${c.name} ${c.set} ${c.number}`;
+  return 'https://www.pricecharting.com/search-products?type=prices&q=' + encodeURIComponent(q);
 }
 // Directe productpagina als de API die geeft, anders een zoekopdracht op Cardmarket zelf.
 function cmLink(c){
   return c.cmUrl || 'https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=' +
-         encodeURIComponent(c.name);
+         encodeURIComponent(marketName(c));
 }
 function tpLink(c){
   return c.tpUrl || 'https://www.tcgplayer.com/search/pokemon/product?productLineName=pokemon&q=' +
-         encodeURIComponent(c.name);
+         encodeURIComponent(marketName(c));
 }
 function cmTitle(c){
   const bits = [];
