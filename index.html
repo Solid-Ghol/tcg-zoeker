@@ -96,6 +96,18 @@ button:disabled{opacity:.55;cursor:default}
 label.chk{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--dim);cursor:pointer}
 .examples{margin-top:8px;font-size:12.5px;color:var(--dim)}
 .examples a{cursor:pointer}
+/* set-browser: blader door alle sets, gegroepeerd per serie (zoals pkmn.gg /series) */
+.setbrowser{display:none;margin-top:12px;padding:12px 14px;border:1px solid var(--line);
+  border-radius:10px;background:var(--panel2);max-height:44vh;overflow:auto}
+.setbrowser.on{display:block}
+.setbrowser .shint{color:var(--dim);font-size:12px;margin:0 0 6px}
+.sgroup h3{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--dim);
+  margin:12px 0 6px;position:sticky;top:-12px;background:var(--panel2);padding-top:4px}
+.sgroup:first-of-type h3{margin-top:0}
+.schips{display:flex;flex-wrap:wrap;gap:6px}
+.schip{font-size:12.5px;border:1px solid var(--line);border-radius:999px;padding:3px 10px;
+  cursor:pointer;background:var(--panel);color:var(--txt)}
+@media (hover:hover){ .schip:hover{border-color:var(--accent);color:var(--accent)} }
 .status{padding:10px 24px;font-size:13px;color:var(--dim);border-bottom:1px solid var(--line);
   background:var(--panel);display:none}
 .status.on{display:block}
@@ -123,6 +135,7 @@ h2 small{color:var(--dim);font-weight:400;font-size:13px}
 .tag{font-size:10.5px;border:1px solid var(--line);border-radius:999px;padding:1px 7px;color:var(--dim)}
 .tag.jp{border-color:var(--gold);color:var(--gold)}
 .tag.en{border-color:var(--accent);color:var(--accent)}
+.tag.type{font-weight:700;padding:1px 8px}
 .prices{display:flex;gap:8px;margin-top:auto;padding-top:8px;border-top:1px solid var(--line);
   font-variant-numeric:tabular-nums}
 .pr{flex:1;text-align:center;border-radius:8px;padding:5px 2px;color:inherit;
@@ -247,7 +260,8 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
   afbeelding, set, kaartnummer, rariteit en actuele marktprijzen. Japanse kaarten worden apart
   opgehaald. Werkt in elke browser met internet; er is niets te installeren.</div>
   <div class="searchbar">
-    <input type="text" id="q" placeholder="Bijv.: Omanyte, Kabutops, Aerodactyl" autocomplete="off">
+    <input type="text" id="q" placeholder="Bijv.: Omanyte, Kabutops, Aerodactyl" autocomplete="off" list="setlist">
+    <datalist id="setlist"></datalist>
     <select id="mode">
       <option value="auto">Zoek: naam, anders set</option>
       <option value="name">Zoek: alleen kaartnaam</option>
@@ -275,12 +289,14 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
     <a data-ex="Aerodactyl">Aerodactyl</a> ·
     <a data-ex="Mysterious Fossil">Trainerkaart: Mysterious Fossil</a> ·
     <a data-ex="Fossil" data-mode="set">Hele set: Fossil</a> ·
-    <a data-ex="Rare Candy">Rare Candy</a>
+    <a data-ex="Rare Candy">Rare Candy</a> ·
+    <a id="browseSets"><b>📚 Blader door alle sets</b></a>
     <span class="more"><br>Werkt ook voor Trainer- en Item-kaarten. De Japanse naam wordt automatisch opgezocht;
     lukt dat niet, geef hem dan zelf mee met een schuine streep — bijvoorbeeld
     <a data-ex="Professor's Research /博士の研究">Professor's Research / 博士の研究</a>.
     Een Japanse zoekterm mag je ook los intypen.</span>
   </div>
+  <div class="setbrowser" id="setbrowser"></div>
 </header>
 
 <div class="status" id="status"></div>
@@ -304,6 +320,9 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
   </select>
   <select id="rar" title="Filter op rariteit / kaarttype">
     <option value="">Alle rariteiten</option>
+  </select>
+  <select id="typ" title="Filter op energietype">
+    <option value="">Alle types</option>
   </select>
   <span class="count" id="count"></span>
 </div>
@@ -344,6 +363,23 @@ function h(v){
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
+// Energietypes met hun herkenbare kleur [achtergrond, tekst]. TCG gebruikt "Lightning"/"Darkness"/
+// "Metal"; de spelnamen (Electric/Dark/Steel/Normal) worden hieronder omgezet.
+const TYPE_COLORS = {
+  Grass:['#5fbf62','#08240d'], Fire:['#ff7043','#3a1000'], Water:['#4d90d5','#02203f'],
+  Lightning:['#f4c518','#3a2e00'], Psychic:['#e468ab','#3a0f2a'], Fighting:['#c85f3c','#2a0d04'],
+  Darkness:['#565a6e','#eeeefc'], Metal:['#93a4ae','#141a20'], Dragon:['#cfa62f','#2a1e00'],
+  Fairy:['#ef8fc4','#3a1029'], Colorless:['#cac6b6','#20201a'],
+};
+const TYPE_ALIAS = { Electric:'Lightning', Dark:'Darkness', Steel:'Metal', Normal:'Colorless' };
+function typeChips(types){
+  return (types || []).map(t => {
+    const c = TYPE_COLORS[TYPE_ALIAS[t] || t];
+    return c
+      ? `<span class="tag type" style="background:${c[0]};color:${c[1]};border-color:${c[0]}">${h(t)}</span>`
+      : `<span class="tag">${h(t)}</span>`;
+  }).join('');
+}
 function money(v, cur){
   if (v == null || isNaN(v)) return '—';
   return (cur === 'EUR' ? '€' : '$') + Number(v).toLocaleString('nl-NL',
@@ -376,7 +412,7 @@ function slug(s){
 async function queryEnglish(field, term){
   const base = 'https://api.pokemontcg.io/v2/cards';
   const q = encodeURIComponent(`${field}:"${term}"`);
-  const sel = 'id,name,number,rarity,set,images,tcgplayer,cardmarket';
+  const sel = 'id,name,number,rarity,types,set,images,tcgplayer,cardmarket';
   let page = 1, all = [];
   while (page <= 4){
     const d = await getJSON(`${base}?q=${q}&page=${page}&pageSize=250&select=${sel}&orderBy=set.releaseDate`);
@@ -404,7 +440,7 @@ async function fetchEnglishPtcg(name, mode){
       set: c.set ? c.set.name : '', setSeries: c.set ? c.set.series : '',
       date: c.set ? c.set.releaseDate : '', number: c.number,
       total: c.set && c.set.printedTotal ? c.set.printedTotal : '',
-      rarity: c.rarity || '',
+      rarity: c.rarity || '', types: c.types || [],
       img: c.images ? c.images.small : '', imgBig: c.images ? c.images.large : '',
       usd: tp ? (tp.market != null ? tp.market : tp.mid) : null,
       eur: cm ? (cm.trendPrice != null ? cm.trendPrice : cm.averageSellPrice) : null,
@@ -451,7 +487,7 @@ async function fetchTcgdex(name, lang, mode, jpTerm){
     return {
       q: name, region: lang === 'ja' ? 'JP' : 'EN', name: c.name,
       set: sets[setId] || setId, setSeries: '', date: '',
-      number: c.localId || '', total: '', rarity: '',
+      number: c.localId || '', total: '', rarity: '', types: c.types || [],
       img: c.image ? c.image + '/low.webp' : '', imgBig: c.image ? c.image + '/high.webp' : '',
       usd: null, eur: null, cmLow: null, cmAvg30: null, cmUrl: '', tpUrl: '', _id: c.id,
     };
@@ -467,6 +503,7 @@ async function addTcgdexPrices(cards, lang, max = 60){
       try {
         const d = await getJSON(`https://api.tcgdex.net/v2/${lang}/cards/${c._id}`, 1);
         c.rarity = c.rarity || d.rarity || '';
+        if (d.types && d.types.length) c.types = d.types;
         if (d.set && d.set.name) c.set = d.set.name;
         if (d.set && d.set.releaseDate) c.date = d.set.releaseDate;
         const p = d.pricing || d.prices || null;
@@ -587,7 +624,7 @@ async function run(){
   document.getElementById('go').disabled = false;
   document.getElementById('csv').disabled = !CARDS.length;
   document.getElementById('controls').className = CARDS.length ? 'controls on' : 'controls';
-  populateRarities();
+  populateFilters();
   const failed = notes.some(n => n.includes('class="err"'));
   setStatus(notes.join(' · ') + (failed
     ? '<br><span class="err">Lukt het ophalen niet? Controleer de internetverbinding — sommige ' +
@@ -641,6 +678,7 @@ function cardHTML(c){
       <div class="meta">${h(c.rarity || (c.date ? c.date.slice(0,4) : ''))}</div>
       <div class="tags">
         <span class="tag ${c.region === 'JP' ? 'jp' : 'en'}">${c.region === 'JP' ? 'Japans' : 'Engels'}</span>
+        ${typeChips(c.types)}
         ${c.setSeries ? `<span class="tag">${h(c.setSeries)}</span>` : ''}
       </div>
       <div class="prices">
@@ -675,6 +713,7 @@ function openCard(i){
         ${row('Serie', c.setSeries)}
         ${row('Kaartnummer', c.number ? c.number + (c.total ? ' / ' + c.total : '') : '')}
         ${row('Rariteit', c.rarity)}
+        ${c.types && c.types.length ? `<tr><th>Type</th><td><div class="tags">${typeChips(c.types)}</div></td></tr>` : ''}
         ${row('Uitgebracht', c.date)}
         ${row('Taal', c.region === 'JP' ? 'Japans' : 'Engels')}
       </table>
@@ -702,24 +741,30 @@ function openCard(i){
 }
 function closeCard(){ document.getElementById('modal').classList.remove('on'); MODAL_I = -1; }
 function stepCard(d){ if (MODAL_I >= 0) openCard((MODAL_I + d + VIEW.length) % VIEW.length); }
-// Vult het rariteitsmenu met de rariteiten die daadwerkelijk in de resultaten voorkomen.
-function populateRarities(){
-  const sel = document.getElementById('rar');
+// Vult de filtermenu's met de rariteiten en types die daadwerkelijk in de resultaten voorkomen.
+function fillSelect(id, values, allLabel){
+  const sel = document.getElementById(id);
   const prev = sel.value;
-  const rs = [...new Set(CARDS.map(c => c.rarity).filter(Boolean))].sort((a,b) => a.localeCompare(b));
-  sel.innerHTML = '<option value="">Alle rariteiten</option>' +
-    rs.map(r => `<option value="${h(r)}">${h(r)}</option>`).join('');
-  sel.value = rs.includes(prev) ? prev : '';   // eerdere keuze behouden waar het kan
+  const list = [...new Set(values)].filter(Boolean).sort((a,b) => a.localeCompare(b));
+  sel.innerHTML = `<option value="">${allLabel}</option>` +
+    list.map(v => `<option value="${h(v)}">${h(v)}</option>`).join('');
+  sel.value = list.includes(prev) ? prev : '';   // eerdere keuze behouden waar het kan
+}
+function populateFilters(){
+  fillSelect('rar', CARDS.map(c => c.rarity), 'Alle rariteiten');
+  fillSelect('typ', CARDS.flatMap(c => c.types || []), 'Alle types');
 }
 function render(){
   const f = document.getElementById('filter').value.toLowerCase().trim();
   const reg = document.getElementById('reg').value;
   const rar = document.getElementById('rar').value;
+  const typ = document.getElementById('typ').value;
   const sort = document.getElementById('sort').value;
   const grp = document.getElementById('grp').value;
   let list = CARDS.filter(c => (!reg || c.region === reg) &&
     (!rar || c.rarity === rar) &&
-    (!f || [c.name,c.set,c.number,c.rarity,c.setSeries].join(' ').toLowerCase().includes(f)));
+    (!typ || (c.types || []).includes(typ)) &&
+    (!f || [c.name,c.set,c.number,c.rarity,c.setSeries,(c.types||[]).join(' ')].join(' ').toLowerCase().includes(f)));
   const price = c => (c.eur != null ? c.eur : (c.usd != null ? c.usd * 0.92 : -1));
   if (sort === 'date') list.sort((a,b) => (a.date||'9999').localeCompare(b.date||'9999'));
   if (sort === 'date_desc') list.sort((a,b) => (b.date||'').localeCompare(a.date||''));
@@ -745,14 +790,14 @@ function render(){
 
 /* ---------- CSV ---------- */
 function toCSV(){
-  const head = ['Pokémon','Regio','Kaartnaam','Set','Serie','Nummer','Totaal','Rariteit',
+  const head = ['Pokémon','Regio','Kaartnaam','Set','Serie','Nummer','Totaal','Rariteit','Type',
                 'Uitgebracht','Cardmarket trend (EUR)','Cardmarket laagste (EUR)',
                 'Cardmarket gem. 30d (EUR)','TCGplayer market (USD)',
                 'Cardmarket-link','PriceCharting-link','Afbeelding'];
   const esc = v => '"' + String(v == null ? '' : v).replace(/"/g,'""') + '"';
   const lines = [head.map(esc).join(';')];
   CARDS.forEach(c => lines.push([c.q,c.region,c.name,c.set,c.setSeries,c.number,c.total,
-    c.rarity,c.date,c.eur,c.cmLow,c.cmAvg30,c.usd,
+    c.rarity,(c.types||[]).join(' '),c.date,c.eur,c.cmLow,c.cmAvg30,c.usd,
     cmLink(c),pcSearch(c),c.imgBig || c.img].map(esc).join(';')));
   const blob = new Blob(['﻿' + lines.join('\r\n')], {type:'text/csv;charset=utf-8'});
   const a = document.createElement('a');
@@ -780,6 +825,48 @@ document.addEventListener('keydown', e => {
   if (e.key === 'ArrowLeft') stepCard(-1);
   if (e.key === 'ArrowRight') stepCard(1);
 });
+/* ---------- set-browser: alle sets ophalen (API) en per serie tonen ---------- */
+let ALLSETS = null;
+async function loadAllSets(){
+  if (ALLSETS) return ALLSETS;
+  const d = await getJSON('https://api.pokemontcg.io/v2/sets?select=id,name,series,releaseDate&pageSize=250&orderBy=series');
+  ALLSETS = d.data || [];
+  // setnamen in de datalist zetten, zodat de zoekbalk ze voorstelt tijdens het typen
+  const names = [...new Set(ALLSETS.map(s => s.name))].filter(Boolean).sort((a,b) => a.localeCompare(b));
+  document.getElementById('setlist').innerHTML = names.map(n => `<option value="${h(n)}">`).join('');
+  return ALLSETS;
+}
+function renderSetBrowser(sets){
+  const g = {};
+  sets.forEach(s => (g[s.series || 'Overig'] = g[s.series || 'Overig'] || []).push(s));
+  const series = Object.keys(g).sort((a,b) => a.localeCompare(b));
+  return '<p class="shint">Klik een set om alle kaarten ervan op te halen (' + sets.length + ' sets).</p>' +
+    series.map(sr => `<div class="sgroup"><h3>${h(sr)}</h3><div class="schips">` +
+      g[sr].sort((a,b) => (b.releaseDate||'').localeCompare(a.releaseDate||''))
+           .map(s => `<a class="schip" data-set="${h(s.name)}">${h(s.name)}</a>`).join('') +
+      '</div></div>').join('');
+}
+async function toggleSetBrowser(){
+  const box = document.getElementById('setbrowser');
+  if (box.classList.contains('on')){ box.classList.remove('on'); return; }
+  box.classList.add('on');
+  box.innerHTML = '<span class="spinner"></span> Sets laden…';
+  try { box.innerHTML = renderSetBrowser(await loadAllSets()); }
+  catch(e){ box.innerHTML = '<span style="color:var(--red)">Sets laden mislukt (' + h(e.message) +
+    '). Controleer je internetverbinding en probeer het opnieuw.</span>'; }
+}
+document.getElementById('browseSets').addEventListener('click', toggleSetBrowser);
+document.getElementById('setbrowser').addEventListener('click', e => {
+  const chip = e.target.closest('.schip');
+  if (!chip) return;
+  document.getElementById('q').value = chip.dataset.set;
+  document.getElementById('mode').value = 'set';
+  document.getElementById('setbrowser').classList.remove('on');
+  run();
+});
+// setnamen alvast ophalen voor de autocomplete zodra het zoekveld voor het eerst focus krijgt
+document.getElementById('q').addEventListener('focus', () => loadAllSets().catch(() => {}), {once:true});
+
 // thema: keuze toepassen en onthouden
 const themeSel = document.getElementById('theme');
 function applyTheme(t){
@@ -794,7 +881,7 @@ themeSel.addEventListener('change', () => applyTheme(themeSel.value));
 document.getElementById('go').addEventListener('click', run);
 document.getElementById('q').addEventListener('keydown', e => { if (e.key === 'Enter') run(); });
 document.getElementById('csv').addEventListener('click', toCSV);
-['filter','sort','reg','grp','rar'].forEach(id =>
+['filter','sort','reg','grp','rar','typ'].forEach(id =>
   document.getElementById(id).addEventListener('input', render));
 // Vanaf file:// blokkeert Safari (en iOS in het bijzonder) alle verzoeken naar de API's.
 if (location.protocol === 'file:'){

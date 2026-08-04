@@ -21,6 +21,18 @@ Daarom:
 Test bij elke wijziging dus ook even op een smal scherm (of de mobiele weergave van je browser)
 voordat je hem online zet.
 
+## Zoeken, bladeren en filteren
+
+- **Zoeken** op Pokémon-naam of setnaam (bovenste veld). De zoekbalk stelt setnamen voor
+  terwijl je typt — die worden via de API opgehaald, je hoeft ze niet te onthouden.
+- **Blader door alle sets** — de link onder de zoekbalk opent een overzicht van álle sets,
+  gegroepeerd per serie (net als op pkmn.gg). Eén klik haalt de hele set op.
+- **Filteren binnen je resultaten** (balk die na een zoekopdracht verschijnt): op vrije tekst,
+  op **rariteit** en op **energietype**. De rariteit- en typemenu's vullen zich automatisch met
+  wat er in je resultaten zit.
+- **Energietypes** krijgen hun herkenbare kleur (Fire = rood, Water = blauw, Lightning = geel,
+  enzovoort), zowel op de kaart als in het detailvenster en de CSV-export.
+
 ## Thema's
 
 Rechtsboven in de zoekbalk kies je een thema; je keuze wordt onthouden op je apparaat.
