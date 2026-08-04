@@ -519,6 +519,18 @@ function h(v){
 function ico(id, small){
   return `<svg class="ico${small ? ' s' : ''}" aria-hidden="true"><use href="#${id}"/></svg>`;
 }
+// Kaartafbeeldingen (vooral Japanse van TCGdex) bestaan niet altijd in elk formaat.
+// Probeer daarom .webp -> .png -> .jpg, dan een eventueel meegegeven alternatief
+// (data-alt: bijv. de kleine versie), en pas als laatste de "geen afbeelding"-placeholder.
+function imgErr(el){
+  const s = el.getAttribute('src') || '';
+  if (/\.webp(\?|$)/i.test(s)){ el.src = s.replace(/\.webp/i, '.png'); return; }
+  if (/\.png(\?|$)/i.test(s)){ el.src = s.replace(/\.png/i, '.jpg'); return; }
+  const alt = el.getAttribute('data-alt');
+  if (alt){ el.removeAttribute('data-alt'); el.src = alt; return; }
+  el.onerror = null;
+  el.parentNode.innerHTML = '<div class="ph">geen afbeelding</div>';
+}
 // Energietypes met hun herkenbare kleur [achtergrond, tekst]. TCG gebruikt "Lightning"/"Darkness"/
 // "Metal"; de spelnamen (Electric/Dark/Steel/Normal) worden hieronder omgezet.
 const TYPE_COLORS = {
@@ -1041,7 +1053,7 @@ function cardHTML(c){
   return `<div class="card" data-idx="${c._v}" title="Klik voor groot met alle details">
     <div class="imgwrap">${c.img
       ? `<img loading="lazy" referrerpolicy="no-referrer" src="${h(c.img)}" alt="${h(c.name)}"
-             onerror="this.parentNode.innerHTML='<div class=ph>geen afbeelding</div>'">`
+             onerror="imgErr(this)">`
       : '<div class="ph">geen afbeelding</div>'}</div>
     <div class="body">
       <div class="nm">${h(c.name)}${c.region === 'JP' && c.name !== c.q ? ` <span class="meta">(${h(c.q)})</span>` : ''}</div>
@@ -1073,7 +1085,8 @@ function openCard(i){
   document.getElementById('modalBody').innerHTML = `
     <div class="mimg">${c.imgBig || c.img
       ? `<img referrerpolicy="no-referrer" src="${h(c.imgBig || c.img)}" alt="${h(c.name)}"
-             onerror="this.src='${h(c.img)}'">`
+             ${c.img && c.imgBig && c.img !== c.imgBig ? `data-alt="${h(c.img)}"` : ''}
+             onerror="imgErr(this)">`
       : '<div class="ph">geen afbeelding</div>'}</div>
     <div class="minfo">
       <h3>${h(c.name)}</h3>

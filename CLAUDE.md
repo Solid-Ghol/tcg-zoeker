@@ -74,6 +74,10 @@ Dit bestand is voor Claude (en andere ontwikkelaars): huisregels die bij elke wi
   supertype); toon dan de gebruikte query en probeer een lichtere variant.
 - TCGdex-prijzen zitten in het detail-endpoint per kaart — vergeet `addTcgdexPrices()` niet
   voor elke TCGdex-lijst (ook Japans!).
+- TCGdex-afbeeldingen bestaan niet altijd in elk formaat (vooral Japanse kaarten missen soms
+  `.webp`). De `<img onerror="imgErr(this)">`-helper probeert daarom `.webp` → `.png` → `.jpg`,
+  daarna een `data-alt` (kleine versie in het detailvenster), en pas dán de placeholder. Nooit
+  meteen op de eerste laadfout "geen afbeelding" tonen.
 - Externe marktplaatsen (Cardmarket, TCGplayer, PriceCharting) kunnen niets met Japanse
   tekens of Japanse setnamen: bouw zoek-URL's altijd via `marketName()` (Engelse naam) en
   geef bij PriceCharting "japanese" + kaartnummer mee. Directe productlinks (`cmUrl`/`tpUrl`)
