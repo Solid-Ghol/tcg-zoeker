@@ -27,14 +27,12 @@ voordat je hem online zet.
   terwijl je typt — die worden via de API opgehaald, je hoeft ze niet te onthouden.
 - **Blader door alle sets** — de link onder de zoekbalk opent een overzicht van álle sets,
   gegroepeerd per serie (net als op pkmn.gg). Eén klik haalt de hele set op.
-- **Filter resultaten** (balk die na een zoekopdracht verschijnt): filtert binnen wat je al hebt
-  opgehaald — op vrije tekst, **rariteit** en **energietype**. De menu's vullen zich automatisch
-  met wat er in je resultaten zit. Dit is dus iets anders dan opnieuw zoeken. Met **✕ Wis
-  filters** zet je alles in één keer terug; **✕ Wis** naast de zoekknop leegt het zoekveld en
-  de zoekkenmerken.
-- **Zoek op kenmerken** — het tweede tabblad boven de zoekbalk start een níeuwe zoekopdracht
-  door de volledige Engelse database, op soort kaart, energietype, subtype (ex, VMAX, …),
-  rariteit en set. Er is geen naam nodig.
+- **Filter** (balk die na een zoekopdracht verschijnt): filtert binnen wat je al hebt
+  opgehaald — op vrije tekst, **rariteit**, **energietype**, **soort kaart** en **taal**.
+  De menu's vullen zich automatisch met wat er in je resultaten zit; met **Wis** zet je
+  alles in één keer terug.
+- **Weergave** kies je met knoppen (geen menu): per Pokémon, per set of alles in één lijst,
+  plus een sorteervolgorde.
 - **Energietypes** krijgen hun herkenbare kleur (Fire = rood, Water = blauw, Lightning = geel,
   enzovoort), zowel op de kaart als in het detailvenster en de CSV-export.
 - **Kaartdetails** — het detailvenster toont naast set en prijzen ook soort/subtype, HP,
@@ -52,14 +50,13 @@ voordat je hem online zet.
   daarvan al hebt (bijvoorbeeld „34/165 in collectie").
 - **Prijstrend** — een ▲ of ▼ naast de Cardmarket-prijs betekent dat de trendprijs minstens 3%
   boven of onder het 30-dagengemiddelde ligt; de tooltip geeft het percentage.
-- **Delen** — de knop **🔗 Deel** kopieert een link die precies dezelfde zoekopdracht opent,
-  handig om een vondst naar iemand door te sturen. Ook „Zoek op kenmerken" levert zo'n deelbare
-  link op.
+- **Delen** — de knop **Deel** kopieert een link die precies dezelfde zoekopdracht opent,
+  handig om een vondst naar iemand door te sturen.
 
 ## Instellingen en thema's
 
-Achter het tandwiel rechtsboven zitten de instellingen: thema, zoekmodus (naam/set/automatisch)
-en de bron van kaartgegevens. Je themakeuze wordt onthouden op je apparaat.
+Achter het tandwiel rechtsboven zitten de instellingen: thema en de bron van kaartgegevens.
+Je themakeuze wordt onthouden op je apparaat.
 
 - **Systeem** — volgt automatisch de licht/donker-stand van je telefoon of computer.
 - **Donker** en **Licht** — vaste keuze, ongeacht je systeeminstelling.

@@ -24,11 +24,13 @@ Dit bestand is voor Claude (en andere ontwikkelaars): huisregels die bij elke wi
 - **Thema's**: CSS-variabelen per `data-theme` op `<html>` (auto/dark/light/sunset/jeroen);
   keuze staat in `localStorage` (`tcgtheme`) en wordt vóór het schilderen gezet (inline script
   in `<head>`). Nieuwe kleuren altijd als variabele toevoegen, nooit hardcoded in componenten.
-- **Zoeken**: twee tabbladen — "Zoeken" (naam/set, EN via pokemontcg.io met TCGdex-terugval,
-  JP via PokéAPI + TCGdex) en "Op kenmerken" (rechtstreekse database-query, alleen EN).
-  De balk "Filter resultaten" filtert alleen binnen de al opgehaalde lijst — dat onderscheid
-  bewust zo houden en benoemen.
-- **Instellingen** (thema, zoekmodus, bron) staan achter het tandwiel rechtsboven
+- **Zoeken is één ding**: één zoekbalk (naam of setnaam, automatisch bepaald; EN via
+  pokemontcg.io met TCGdex-terugval, JP via PokéAPI + TCGdex). GEEN aparte
+  "geavanceerd zoeken"-modus toevoegen — dat is eerder geprobeerd en als verwarrend
+  weggehaald. Alles ná het zoeken gebeurt in de balk "Filter:" (tekst, rariteit, type,
+  soort, taal) plus de weergaveknoppen (per Pokémon / per set / alles) — knoppen,
+  geen dropdown, dat is een expliciete wens.
+- **Instellingen** (thema, bron) staan achter het tandwiel rechtsboven
   (`#settingspanel`); nieuwe instellingen horen dáár, niet los in de zoekbalk.
 - **Collectie**: `localStorage` (`tcgcol`), sleutel via `colKey()` (regio + kaart-id).
   Prijzen in de collectie worden ververst zodra dezelfde kaart opnieuw wordt opgehaald
