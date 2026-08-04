@@ -24,8 +24,9 @@ voordat je hem online zet.
 
 ## Zoeken, bladeren en filteren
 
-- **Zoeken** op Pokémon-naam of setnaam (bovenste veld). De zoekbalk stelt setnamen voor
-  terwijl je typt — die worden via de API opgehaald, je hoeft ze niet te onthouden.
+- **Zoeken** op Pokémon-naam of setnaam (bovenste veld). Tijdens het typen vult de zoekbalk
+  Pokémon-namen aan (alle soorten, via PokéAPI) — sets blader je door via het
+  kaarten-icoontje naast de zoekbalk.
 - **Blader door alle sets** — de link onder de zoekbalk opent een overzicht van álle sets,
   gegroepeerd per serie (net als op pkmn.gg). Eén klik haalt de hele set op.
 - **Filter** (balk die na een zoekopdracht verschijnt): filtert binnen wat je al hebt
