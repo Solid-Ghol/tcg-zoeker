@@ -86,10 +86,13 @@ h1{margin:0 0 4px;font-size:26px;letter-spacing:-.015em;display:flex;align-items
 .hbtns button.on{border-color:var(--green);color:var(--green)}
 .iconbtn{padding:8px}
 .iconbtn .ico{margin:0;vertical-align:-2px}
-/* Scan-knop (foto-herkenning): valt op met een accentrand zodat hij vindbaar is */
-.scanbtn{border-color:var(--accent);color:var(--accent);font-weight:600}
+/* Scan-knop (foto-herkenning): opvallende, licht pulserende knop — de blikvanger.
+   Gebruikt de gevulde primary-stijl plus een zachte gloed die de aandacht trekt. */
 .scanbtn .ico{width:17px;height:17px}
-@media (hover:hover){ .scanbtn:not(:disabled):hover{background:var(--panel);border-color:var(--accent)} }
+@media (prefers-reduced-motion: no-preference){
+  .scanbtn{animation:scanglow 2.8s ease-in-out infinite}
+}
+@keyframes scanglow{0%,100%{box-shadow:var(--shadow-sm)}50%{box-shadow:var(--shadow-sm),var(--ring)}}
 /* knoppengroep (weergave-schakelaar) */
 .stabs{display:inline-flex;border:1px solid var(--line);border-radius:10px;
   overflow:hidden;background:var(--panel2)}
@@ -392,7 +395,7 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
     <button class="primary" id="go"><svg class="ico" aria-hidden="true"><use href="#i-lens"/></svg>Zoeken</button>
     <button id="reset" title="Maak het zoekveld leeg"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg>Wis</button>
     <button class="iconbtn" id="browseSets" title="Blader door alle sets" aria-label="Blader door alle sets"><svg class="ico" aria-hidden="true"><use href="#i-cards"/></svg></button>
-    <button class="scanbtn" id="photoBtn" title="Herken een kaart via een foto — maak er een of kies er een uit je fotorol"><svg class="ico" aria-hidden="true"><use href="#i-dex"/></svg>Scan kaart</button>
+    <button class="primary scanbtn" id="photoBtn" title="Herken een kaart via een foto — maak er een of kies er een uit je fotorol"><svg class="ico" aria-hidden="true"><use href="#i-dex"/></svg>Scan kaart</button>
     <input type="file" id="photoFile" accept="image/*" hidden>
   </div>
   <div class="helppanel" id="helppanel">
@@ -777,8 +780,39 @@ async function fetchJapanese(name, override){
 }
 
 /* ---------- ophalen ---------- */
+// Zoekresultaten kort onthouden (in het geheugen), zodat dezelfde zoekopdracht — of een
+// kaart die je net bekeek en opnieuw opzoekt — meteen terugkomt in plaats van opnieuw
+// alle API's te bevragen.
+const SEARCH_CACHE = {};
+const SEARCH_TTL = 15 * 60 * 1000;   // 15 minuten; daarna vers ophalen (prijzen kunnen wijzigen)
+
+// De afronding van een zoekactie (UI klaarzetten en tonen); gedeeld door de gewone weg en
+// de cache-treffer.
+function finishRun(asSet, notes){
+  document.getElementById('go').disabled = false;
+  document.getElementById('csv').disabled = !CARDS.length;
+  document.getElementById('controls').className = CARDS.length ? 'controls on' : 'controls';
+  populateFilters();
+  refreshColPrices();
+  // een hele set opgehaald? dan is per set + op kaartnummer de logische weergave
+  if (asSet){ setView('set'); document.getElementById('sort').value = 'number'; }
+  S.className = 'status'; S.innerHTML = '';   // de vaste balk is alleen voor de collectie
+  const failed = (notes || []).some(n => n.includes('class="err"'));
+  if (notes && notes.length){
+    toast(notes.join('<br>') + (failed
+      ? '<br><span class="err">Lukt het ophalen niet? Controleer de internetverbinding — sommige ' +
+        'bedrijfsnetwerken of VPN\'s blokkeren deze open API\'s.</span>' : ''),
+      failed ? 15000 : 8000);
+  }
+  render();
+  if (CARDS.length && window.matchMedia('(max-width:640px)').matches){
+    document.getElementById('controls').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+}
+
 async function run(){
-  const entries = document.getElementById('q').value.split(',')
+  const qRaw = document.getElementById('q').value;
+  const entries = qRaw.split(',')
       .map(s => s.trim()).filter(Boolean)
       .map(s => {
         const parts = s.split('/');
@@ -792,54 +826,69 @@ async function run(){
   const mode = document.getElementById('mode').value;
   const prefer = document.getElementById('src').value;
   document.getElementById('go').disabled = true;
+  fetchEnglish.via = '';
+
+  // Dezelfde zoekopdracht kort geleden al gedaan? Meteen uit de cache tonen.
+  const cacheKey = mode + '|' + prefer + '|' + qRaw.trim().toLowerCase();
+  const cached = SEARCH_CACHE[cacheKey];
+  if (cached && Date.now() - cached.t < SEARCH_TTL){
+    CARDS = cached.cards.map(c => ({...c}));
+    finishRun(cached.asSet, []);
+    return;
+  }
+
   CARDS = [];
   showSkeleton();
   // Er wordt altijd in het Engels én Japans gezocht; taal beperken doe je in de filterbalk.
   // De status meldt alleen problemen — een geslaagde zoekactie spreekt voor zich.
   const notes = [];
+  // Zodra er kaarten binnen zijn tussentijds tonen (Engels heeft prijzen al bij zich en
+  // komt meestal het eerst); Japanse prijzen worden daarna per kaart bijgewerkt.
+  const partial = () => {
+    if (!CARDS.length) return;
+    document.getElementById('controls').className = 'controls on';
+    populateFilters();
+    render();
+  };
+  setStatus(`<span class="spinner"></span> Bezig met zoeken…`);
+
+  // Engels en Japans parallel ophalen (scheelt fors t.o.v. na elkaar wachten).
+  const tasks = [];
   for (const ent of entries){
     const n = ent.term;
-    setStatus(`<span class="spinner"></span> Bezig met <b>${h(n)}</b>…`);
     if (!isJapanese(n)){
+      tasks.push((async () => {
+        try {
+          const r = await fetchEnglish(n, mode, prefer);
+          CARDS = CARDS.concat(r);
+          if (!r.length) notes.push(`${h(n)}: geen Engelse kaarten gevonden`);
+          partial();
+        } catch(e){ notes.push(`<span class="err">${h(n)}: Engelse kaarten mislukt (${h(e.message)})</span>`); }
+      })());
+    }
+    tasks.push((async () => {
       try {
-        const r = await fetchEnglish(n, mode, prefer); CARDS = CARDS.concat(r);
-        if (!r.length) notes.push(`${h(n)}: geen Engelse kaarten gevonden`);
+        // Japanse naam zelf bepalen (geen gedeelde functiestatus, dus veilig bij parallel).
+        const jaTerm = ent.ja || (isJapanese(n) ? n : await japaneseName(n));
+        if (!jaTerm){
+          if (!isJapanese(n)) notes.push(`${h(n)}: geen Japanse naam gevonden — geef hem zelf mee als ` +
+            `<code>${h(n)} / japanse naam</code>`);
+          return;
+        }
+        const r = await fetchTcgdex(n, 'ja', mode, jaTerm);
+        CARDS = CARDS.concat(r);
+        partial();                       // toon de Japanse kaarten alvast…
+        await addTcgdexPrices(r, 'ja');   // …en werk daarna prijs, rariteit en type per kaart bij
+        partial();
       }
-      catch(e){ notes.push(`<span class="err">${h(n)}: Engelse kaarten mislukt (${h(e.message)})</span>`); }
-    }
-    try {
-      const r = await fetchJapanese(n, ent.ja, mode);
-      await addTcgdexPrices(r, 'ja');   // prijs, rariteit en type moeten per kaart bijgeladen worden
-      CARDS = CARDS.concat(r);
-      if (!fetchJapanese.term && !isJapanese(n)){
-        notes.push(`${h(n)}: geen Japanse naam gevonden — geef hem zelf mee als ` +
-                   `<code>${h(n)} / japanse naam</code>`);
-      }
-    }
-    catch(e){ notes.push(`<span class="err">${h(n)}: Japanse kaarten mislukt (${h(e.message)})</span>`); }
+      catch(e){ notes.push(`<span class="err">${h(n)}: Japanse kaarten mislukt (${h(e.message)})</span>`); }
+    })());
   }
-  document.getElementById('go').disabled = false;
-  document.getElementById('csv').disabled = !CARDS.length;
-  document.getElementById('controls').className = CARDS.length ? 'controls on' : 'controls';
-  populateFilters();
-  refreshColPrices();
-  // een hele set opgehaald? dan is per set + op kaartnummer de logische weergave
-  if (CARDS.length && (mode === 'set' || fetchEnglish.via === 'set')){
-    setView('set');
-    document.getElementById('sort').value = 'number';
-  }
-  const failed = notes.some(n => n.includes('class="err"'));
-  S.className = 'status'; S.innerHTML = '';   // de vaste balk is alleen voor de collectie
-  if (notes.length){
-    toast(notes.join('<br>') + (failed
-      ? '<br><span class="err">Lukt het ophalen niet? Controleer de internetverbinding — sommige ' +
-        'bedrijfsnetwerken of VPN\'s blokkeren deze open API\'s.</span>' : ''),
-      failed ? 15000 : 8000);
-  }
-  render();
-  if (CARDS.length && window.matchMedia('(max-width:640px)').matches){
-    document.getElementById('controls').scrollIntoView({behavior:'smooth', block:'start'});
-  }
+  await Promise.all(tasks);
+
+  const asSet = !!(CARDS.length && (mode === 'set' || fetchEnglish.via === 'set'));
+  if (CARDS.length) SEARCH_CACHE[cacheKey] = { t: Date.now(), cards: CARDS.map(c => ({...c})), asSet };
+  finishRun(asSet, notes);
 }
 
 /* ---------- tonen ---------- */
