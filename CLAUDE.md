@@ -66,6 +66,11 @@ Dit bestand is voor Claude (en andere ontwikkelaars): huisregels die bij elke wi
   krijgt visueel accent (`a.pr.main`). Directe links voor pokemontcg.io-kaarten volgen het
   vaste patroon `https://prices.pokemontcg.io/cardmarket/{id}` — bouw ze desnoods zelf uit
   het kaart-id, dan komt de knop ook zonder prijsblok op de juiste kaart uit.
+- **Cardmarket-prijsvelden**: `trendPrice` is de globale markttrend (conditie-onafhankelijk,
+  in de praktijk gedreven door Near Mint-verkopen). De kale `lowPrice` telt álle condities mee
+  (ook Played/Damaged) en is dus onbetrouwbaar laag — gebruik `lowPriceExPlus` (Excellent of
+  beter, het near-mint-segment) voor "laagste aanbod", met `lowPrice` alleen als terugval
+  (vlag `cmLowEx` bepaalt het label).
 - **TCGplayer is bewust verwijderd** uit de interface (expliciete wens): Cardmarket is main,
   PriceCharting (ungraded/graded) is sub. De USD-prijs wordt nog wel stilletjes opgehaald als
   terugval voor prijssortering en collectiewaarde wanneer een euroteken ontbreekt — niet tonen.
