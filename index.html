@@ -974,9 +974,9 @@ function cardHTML(c){
         title="${colHas(c) ? 'Verwijder deze kaart uit je collectie' : 'Bewaar deze kaart in je collectie (op dit apparaat)'}">${ico('i-ball', true)}${colHas(c) ? '✓ In collectie' : '+ Collectie'}</button>
       <div class="prices">
         <a class="pr main" href="${h(cmLink(c))}" target="_blank" rel="noopener"
-           title="${h(cmTitle(c))}"><b>${money(c.eur,'EUR')}${trendArrow(c)}</b><span>Cardmarket ↗</span></a>
-        <a class="pr" href="${h(pcSearch(c))}" target="_blank" rel="noopener"
-           title="Ungraded-prijs opzoeken bij PriceCharting (zoekt op naam + kaartnummer; graded staat op dezelfde pagina)"><b>ungraded</b><span>PriceCharting ↗</span></a>
+           title="${h(cmTitle(c))}"><b>${money(c.eur,'EUR')}${trendArrow(c)}</b><span>Trend ↗</span></a>
+        <a class="pr" href="${h(cmLink(c))}" target="_blank" rel="noopener"
+           title="Gemiddelde verkoopprijs van de afgelopen 30 dagen op Cardmarket"><b>${money(c.cmAvg30,'EUR')}</b><span>30 dagen ↗</span></a>
       </div>
     </div></div>`;
 }
