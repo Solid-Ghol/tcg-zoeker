@@ -392,8 +392,8 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
     <button class="primary" id="go"><svg class="ico" aria-hidden="true"><use href="#i-lens"/></svg>Zoeken</button>
     <button id="reset" title="Maak het zoekveld leeg"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg>Wis</button>
     <button class="iconbtn" id="browseSets" title="Blader door alle sets" aria-label="Blader door alle sets"><svg class="ico" aria-hidden="true"><use href="#i-cards"/></svg></button>
-    <button class="scanbtn" id="photoBtn" title="Herken een kaart via een foto (Pokédex-scan)"><svg class="ico" aria-hidden="true"><use href="#i-dex"/></svg>Scan kaart</button>
-    <input type="file" id="photoFile" accept="image/*" capture="environment" hidden>
+    <button class="scanbtn" id="photoBtn" title="Herken een kaart via een foto — maak er een of kies er een uit je fotorol"><svg class="ico" aria-hidden="true"><use href="#i-dex"/></svg>Scan kaart</button>
+    <input type="file" id="photoFile" accept="image/*" hidden>
   </div>
   <div class="helppanel" id="helppanel">
     <b>Zo werkt het.</b> Typ één of meer namen, gescheiden door komma's, en klik op Zoeken.
@@ -1379,7 +1379,9 @@ function revealPhotoMatch(){
   if (!PHOTO_MATCH) return;
   const { name, number, set } = PHOTO_MATCH;
   PHOTO_MATCH = null;
-  const norm = s => String(s || '').toLowerCase().replace(/^0+/, '');
+  // Kaartnummer normaliseren: alleen het deel vóór de streep ("58/102" -> "58"),
+  // zonder spaties en zonder voorloopnullen ("058" -> "58"), hoofdletterongevoelig.
+  const norm = s => String(s || '').toLowerCase().trim().split('/')[0].replace(/\s+/g, '').replace(/^0+(?=\d)/, '');
   const setMatch = c => !set || (c.set || '').toLowerCase().includes(set.toLowerCase()) ||
                         set.toLowerCase().includes((c.set || '').toLowerCase());
   let idx = -1;
