@@ -14,7 +14,9 @@
 // Optioneel: GROQ_MODEL / GEMINI_MODEL / ANTHROPIC_MODEL om een ander model te kiezen.
 
 const GROQ_KEY = process.env.GROQ_API_KEY;
-const GROQ_MODEL = process.env.GROQ_MODEL || 'meta-llama/llama-4-scout-17b-16e-instruct';
+// GROQ_MODEL mag leeg blijven: dan zoekt de functie zelf een beschikbaar vision-model op
+// (Groq wisselt modelnamen geregeld, dus niet hardcoden).
+const GROQ_MODEL = process.env.GROQ_MODEL || '';
 const GEMINI_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
@@ -45,12 +47,34 @@ function extractJSON(text){
 }
 
 // --- Groq (Llama vision, gratis) — OpenAI-compatibel formaat ---
-async function askGroq(image, mediaType){
+// Groq wisselt modelnamen geregeld en per account verschilt wat beschikbaar is. Daarom vragen
+// we (als er geen GROQ_MODEL is ingesteld) de modellijst op en kiezen zelf een vision-model.
+let GROQ_CACHED_MODEL = null;
+async function groqVisionCandidates(){
+  const r = await fetch('https://api.groq.com/openai/v1/models', {
+    headers: { 'authorization': 'Bearer ' + GROQ_KEY },
+  });
+  const data = await r.json();
+  if (!r.ok){
+    const e = new Error((data && data.error && data.error.message) || ('Groq gaf status ' + r.status));
+    e.status = 502; throw e;
+  }
+  const rank = id => {
+    const s = id.toLowerCase();
+    if (s.includes('llama-4') || s.includes('scout') || s.includes('maverick')) return 0;
+    if (s.includes('vision')) return 1;
+    return 99;   // niet-multimodaal: overslaan
+  };
+  return (data.data || []).map(m => m.id)
+    .filter(id => rank(id) < 99)
+    .sort((a, b) => rank(a) - rank(b));
+}
+async function groqComplete(model, image, mediaType){
   const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: { 'authorization': 'Bearer ' + GROQ_KEY, 'content-type': 'application/json' },
     body: JSON.stringify({
-      model: GROQ_MODEL,
+      model,
       temperature: 0,
       max_tokens: 400,
       messages: [{
@@ -65,10 +89,34 @@ async function askGroq(image, mediaType){
   const data = await r.json();
   if (!r.ok){
     const e = new Error((data && data.error && data.error.message) || ('Groq gaf status ' + r.status));
-    e.status = 502; throw e;
+    e.status = 502; e.modelIssue = /model|not exist|access|decommission|not found|deprecat/i.test(e.message);
+    throw e;
   }
   return (data.choices && data.choices[0] && data.choices[0].message &&
           data.choices[0].message.content || '').trim();
+}
+async function askGroq(image, mediaType){
+  // Vaste keuze (GROQ_MODEL) of een eerder werkend model? Probeer dat eerst.
+  const preferred = GROQ_MODEL || GROQ_CACHED_MODEL;
+  const candidates = preferred ? [preferred] : await groqVisionCandidates();
+  if (!candidates.length){
+    const e = new Error('Geen Groq vision-model beschikbaar voor deze sleutel. ' +
+      'Kies er een in het Groq-dashboard en zet die als GROQ_MODEL in Vercel.');
+    e.status = 502; throw e;
+  }
+  let lastErr;
+  for (const model of candidates.slice(0, 3)){
+    try {
+      const text = await groqComplete(model, image, mediaType);
+      GROQ_CACHED_MODEL = model;   // onthouden voor de volgende foto
+      return text;
+    } catch(e){
+      lastErr = e;
+      if (!e.modelIssue) throw e;   // echte fout (geen model-kwestie): meteen stoppen
+      GROQ_CACHED_MODEL = null;     // dit model werkt niet; probeer het volgende
+    }
+  }
+  throw lastErr;
 }
 
 // --- Google Gemini (gratis tier) ---
