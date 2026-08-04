@@ -716,6 +716,16 @@ async function addTcgdexPrices(cards, lang, max = 60){
         if (d.illustrator) c.artist = d.illustrator;
         if (d.set && d.set.name) c.set = d.set.name;
         if (d.set && d.set.releaseDate) c.date = d.set.releaseDate;
+        // Zet het settotaal (voor "aantal" en voor nummer/set-matching bij het scannen).
+        if (!c.total && d.set && d.set.cardCount){
+          c.total = d.set.cardCount.official || d.set.cardCount.total || '';
+        }
+        // Afbeelding: de lijst-endpoint mist die soms (vooral bij gloednieuwe sets),
+        // terwijl het detail-endpoint hem wél kan hebben — dan die alsnog gebruiken.
+        if (d.image){
+          if (!c.img) c.img = d.image + '/low.webp';
+          if (!c.imgBig) c.imgBig = d.image + '/high.webp';
+        }
         const p = d.pricing || d.prices || null;
         if (p){
           const cm = p.cardmarket || p;
