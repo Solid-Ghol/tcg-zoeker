@@ -1,4 +1,27 @@
-# Pokémon TCG-zoeker — online zetten via GitHub Pages
+# Pokémon TCG-zoeker
+
+Een Pokémon-kaartzoeker die per zoekterm alle kaarten ophaalt — met afbeelding, set,
+kaartnummer, rariteit en actuele marktprijzen (Cardmarket, TCGplayer). Engelse en Japanse
+kaarten worden apart opgehaald. Alles zit in één `index.html`; er is geen server of database.
+
+## Uitgangspunt: werkt lekker op mobiel
+
+De zoeker moet **prettig werken op een telefoon** — dat is een harde eis, geen bijzaak. De meeste
+mensen openen hem onderweg op hun mobiel (bijvoorbeeld tijdens het snuffelen op een verzamelbeurs).
+Daarom:
+
+- de layout is mobile-first en schaalt mee met de schermbreedte;
+- knoppen en velden zijn groot genoeg om met de duim te bedienen, en invoervelden gebruiken op
+  mobiel `16px` zodat Safari niet ongevraagd inzoomt;
+- het grote kaartvenster vult op de telefoon het volledige scherm, met bladerknoppen binnen
+  duimbereik;
+- er wordt rekening gehouden met de veilige zone (de "notch"/afgeronde hoeken) via
+  `env(safe-area-inset-*)`.
+
+Test bij elke wijziging dus ook even op een smal scherm (of de mobiele weergave van je browser)
+voordat je hem online zet.
+
+## Online zetten via GitHub Pages
 
 De zoeker haalt kaartgegevens en prijzen op bij twee open API's. Browsers staan dat alleen toe
 wanneer de pagina zelf via `http(s)://` geserveerd wordt. Vanaf de bestandsopslag (`file://`)
