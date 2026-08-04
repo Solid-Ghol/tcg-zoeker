@@ -106,15 +106,41 @@ async function openrouterComplete(model, image, mediaType){
   return (data.choices && data.choices[0] && data.choices[0].message &&
           data.choices[0].message.content || '').trim();
 }
+// Snelle, betrouwbaar gratis vision-modellen om éérst te proberen — dat scheelt op de
+// server het ophalen van de volledige modellijst (dat kost een extra ronde). Kleinere
+// modellen bovenaan: die lezen kaartnaam + nummer prima en antwoorden sneller.
+const OR_KNOWN_MODELS = [
+  'qwen/qwen2.5-vl-32b-instruct:free',
+  'meta-llama/llama-3.2-11b-vision-instruct:free',
+  'qwen/qwen2.5-vl-72b-instruct:free',
+];
 async function askOpenRouter(image, mediaType){
-  const preferred = OPENROUTER_MODEL || OR_CACHED_MODEL;
-  const candidates = preferred ? [preferred] : await openrouterFreeVisionModels();
-  if (!candidates.length){
+  // Vaste keuze (env) of een eerder werkend model? Dan alleen dat.
+  if (OPENROUTER_MODEL) return openrouterComplete(OPENROUTER_MODEL, image, mediaType);
+  // Anders: eerst de snelle bekende modellen (geen modellijst-ophaal nodig).
+  const fast = OR_CACHED_MODEL ? [OR_CACHED_MODEL, ...OR_KNOWN_MODELS] : OR_KNOWN_MODELS.slice();
+  const tried = new Set();
+  let lastErr;
+  for (const model of fast){
+    if (tried.has(model)) continue;
+    tried.add(model);
+    try {
+      const text = await openrouterComplete(model, image, mediaType);
+      OR_CACHED_MODEL = model;
+      return text;
+    } catch(e){
+      lastErr = e;
+      if (!e.modelIssue) throw e;   // echte fout (bv. rate limit): meteen stoppen
+      OR_CACHED_MODEL = null;
+    }
+  }
+  // Bekende modellen bestaan niet (meer) voor deze sleutel: ontdek via de modellijst.
+  const discovered = (await openrouterFreeVisionModels()).filter(m => !tried.has(m));
+  if (!discovered.length && !lastErr){
     const e = new Error('Geen gratis vision-model beschikbaar op OpenRouter voor deze sleutel.');
     e.status = 502; throw e;
   }
-  let lastErr;
-  for (const model of candidates.slice(0, 4)){
+  for (const model of discovered.slice(0, 4)){
     try {
       const text = await openrouterComplete(model, image, mediaType);
       OR_CACHED_MODEL = model;
@@ -122,7 +148,6 @@ async function askOpenRouter(image, mediaType){
     } catch(e){
       lastErr = e;
       if (!e.modelIssue) throw e;
-      OR_CACHED_MODEL = null;
     }
   }
   throw lastErr;

@@ -861,6 +861,7 @@ async function run(){
     document.getElementById('controls').className = 'controls on';
     populateFilters();
     render();
+    tryOpenPhotoMatch();   // foto-scan: open de kaart zodra hij tussen de resultaten opduikt
   };
   setStatus(`<span class="spinner"></span> Bezig met zoeken…`);
 
@@ -1431,32 +1432,39 @@ async function identifyFromPhoto(file){
     document.getElementById('q').value = name;
     document.getElementById('mode').value = 'auto';
     await run();
-    revealPhotoMatch();
+    finalizePhotoMatch();
   } catch(e){
     toast('<span class="err">Foto herkennen mislukt: ' + h(e.message) + '</span>', 14000);
   }
 }
-// Na de zoekactie de herkende kaart proberen te openen (op kaartnummer, evt. binnen de set).
-function revealPhotoMatch(){
-  if (!PHOTO_MATCH) return;
+// Herkende kaart al te vinden tussen de huidige resultaten? Dan meteen openen — zo hoeft
+// de foto-flow niet te wachten tot óók de Japanse kaarten en alle prijzen binnen zijn.
+// Wordt tijdens het tussentijds tonen (run -> partial) aangeroepen; opent hooguit één keer.
+function tryOpenPhotoMatch(){
+  if (!PHOTO_MATCH || !PHOTO_MATCH.number) return false;
   const { name, number, set } = PHOTO_MATCH;
-  PHOTO_MATCH = null;
   // Kaartnummer normaliseren: alleen het deel vóór de streep ("58/102" -> "58"),
   // zonder spaties en zonder voorloopnullen ("058" -> "58"), hoofdletterongevoelig.
   const norm = s => String(s || '').toLowerCase().trim().split('/')[0].replace(/\s+/g, '').replace(/^0+(?=\d)/, '');
   const setMatch = c => !set || (c.set || '').toLowerCase().includes(set.toLowerCase()) ||
                         set.toLowerCase().includes((c.set || '').toLowerCase());
-  let idx = -1;
-  if (number){
-    idx = VIEW.findIndex(c => norm(c.number) === norm(number) && setMatch(c));
-    if (idx < 0) idx = VIEW.findIndex(c => norm(c.number) === norm(number));
-  }
+  let idx = VIEW.findIndex(c => norm(c.number) === norm(number) && setMatch(c));
+  if (idx < 0) idx = VIEW.findIndex(c => norm(c.number) === norm(number));
+  if (idx < 0) return false;
+  PHOTO_MATCH = null;
+  openCard(idx);
+  toast('Herkend: <b>' + h(name) + '</b>' + ' · #' + h(number) + (set ? ' · ' + h(set) : '') +
+    ' — de kaart staat open. Klopt het niet? Pas de zoekterm hierboven aan.', 9000);
+  return true;
+}
+// Na afloop van de zoekactie: is de kaart nog niet geopend (geen exacte match), meld dat kort.
+function finalizePhotoMatch(){
+  if (!PHOTO_MATCH) return;   // al geopend via tryOpenPhotoMatch
+  const { name, number, set } = PHOTO_MATCH;
+  PHOTO_MATCH = null;
   const info = 'Herkend: <b>' + h(name) + '</b>' +
     (number ? ' · #' + h(number) : '') + (set ? ' · ' + h(set) : '');
-  if (idx >= 0){
-    openCard(idx);
-    toast(info + ' — de kaart staat open. Klopt het niet? Pas de zoekterm hierboven aan.', 9000);
-  } else if (VIEW.length){
+  if (VIEW.length){
     toast(info + (number ? ' — kaart #' + h(number) + ' niet exact gevonden; bekijk de resultaten.'
                          : ' — bekijk de resultaten.'), 11000);
   } else {
