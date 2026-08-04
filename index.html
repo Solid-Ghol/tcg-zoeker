@@ -375,8 +375,8 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
     </label>
   </div>
   <div class="searchbar">
-    <input type="text" id="q" placeholder="Zoek een Pokémon, kaart of set — bijv. Omanyte, Kabutops" autocomplete="off" list="setlist">
-    <datalist id="setlist"></datalist>
+    <input type="text" id="q" placeholder="Zoek een Pokémon, kaart of set — bijv. Omanyte, Kabutops" autocomplete="off" list="pokelist">
+    <datalist id="pokelist"></datalist>
     <input type="hidden" id="mode" value="auto">
     <button class="primary" id="go"><svg class="ico" aria-hidden="true"><use href="#i-lens"/></svg>Zoeken</button>
     <button id="reset" title="Maak het zoekveld leeg"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg>Wis</button>
@@ -1190,10 +1190,30 @@ async function loadAllSets(){
   if (ALLSETS) return ALLSETS;
   const d = await getJSON('https://api.pokemontcg.io/v2/sets?select=id,name,series,releaseDate&pageSize=250&orderBy=series');
   ALLSETS = d.data || [];
-  // setnamen in de datalist zetten, zodat de zoekbalk ze voorstelt tijdens het typen
-  const names = [...new Set(ALLSETS.map(s => s.name))].filter(Boolean).sort((a,b) => a.localeCompare(b));
-  document.getElementById('setlist').innerHTML = names.map(n => `<option value="${h(n)}">`).join('');
   return ALLSETS;
+}
+/* ---------- autocomplete: Pokémon-namen tijdens het typen ---------- */
+// PokéAPI gebruikt sleutelnamen ("mr-mime"); de kaartnamen wijken soms af.
+const POKE_DISPLAY = {
+  'mr-mime': 'Mr. Mime', 'mime-jr': 'Mime Jr.', 'mr-rime': 'Mr. Rime',
+  'farfetchd': "Farfetch'd", 'sirfetchd': "Sirfetch'd",
+  'nidoran-f': 'Nidoran♀', 'nidoran-m': 'Nidoran♂',
+  'porygon-z': 'Porygon-Z', 'ho-oh': 'Ho-Oh', 'type-null': 'Type: Null',
+  'jangmo-o': 'Jangmo-o', 'hakamo-o': 'Hakamo-o', 'kommo-o': 'Kommo-o',
+  'flabebe': 'Flabébé', 'wo-chien': 'Wo-Chien', 'chien-pao': 'Chien-Pao',
+  'ting-lu': 'Ting-Lu', 'chi-yu': 'Chi-Yu',
+};
+function pokeDisplay(slug){
+  if (POKE_DISPLAY[slug]) return POKE_DISPLAY[slug];
+  return slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+let POKENAMES = null;
+async function loadPokeNames(){
+  if (POKENAMES) return;
+  const d = await getJSON('https://pokeapi.co/api/v2/pokemon-species?limit=2000');
+  POKENAMES = (d.results || []).map(s => pokeDisplay(s.name)).sort((a, b) => a.localeCompare(b));
+  document.getElementById('pokelist').innerHTML =
+    POKENAMES.map(n => `<option value="${h(n)}">`).join('');
 }
 function renderSetBrowser(sets){
   const g = {};
@@ -1240,8 +1260,8 @@ document.getElementById('setbrowser').addEventListener('click', e => {
   document.getElementById('setbrowser').classList.remove('on');
   run();
 });
-// setnamen alvast ophalen voor de autocomplete zodra het zoekveld voor het eerst focus krijgt
-document.getElementById('q').addEventListener('focus', () => loadAllSets().catch(() => {}), {once:true});
+// Pokémon-namen alvast ophalen voor de autocomplete zodra het zoekveld focus krijgt
+document.getElementById('q').addEventListener('focus', () => loadPokeNames().catch(() => {}), {once:true});
 
 // scroll-hint op de filterbalk: pijltje tonen zolang er rechts meer te vegen valt
 const CSCROLL = document.getElementById('cscroll');
