@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="nl" data-theme="auto">
 <head>
+<script>/* thema vroeg zetten, vóór het schilderen, zodat er geen flits optreedt */
+try{document.documentElement.dataset.theme=localStorage.getItem('tcgtheme')||'auto';}catch(e){}</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pokémon TCG-zoeker</title>
@@ -13,7 +15,10 @@
 <link rel="icon" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
 <style>
+/* ---------- thema's ---------- */
+/* Donker: de standaard en de expliciete keuze "donker". */
 :root{
+  color-scheme:dark;
   --bg:#0e1117; --panel:#161b22; --panel2:#1e242c; --line:#2a323c;
   --txt:#e8edf3; --dim:#9aa7b5; --accent:#6ea8fe; --accent2:#8f7bff;
   --gold:#e3b341; --green:#5dd39e; --red:#ff8080;
@@ -21,13 +26,48 @@
   --shadow-sm:0 1px 3px rgba(0,0,0,.35);
   --ring:0 0 0 3px rgba(110,168,254,.4);
 }
+:root[data-theme="auto"]{ color-scheme:light dark }
+/* Licht: expliciet gekozen, óf "systeem" op een licht apparaat. */
 @media (prefers-color-scheme: light){
-  :root{ --bg:#f5f7fa; --panel:#fff; --panel2:#eef2f7; --line:#dde3ea;
+  :root[data-theme="auto"]{ color-scheme:light; --bg:#f5f7fa; --panel:#fff; --panel2:#eef2f7; --line:#dde3ea;
          --txt:#131820; --dim:#5d6b7a; --accent:#1a5fd0; --accent2:#6d4bd6;
          --gold:#a9761a; --green:#127a52; --red:#b3261e;
          --shadow:0 1px 2px rgba(16,24,40,.06), 0 8px 24px rgba(16,24,40,.08);
          --shadow-sm:0 1px 3px rgba(16,24,40,.08);
          --ring:0 0 0 3px rgba(26,95,208,.25); }
+}
+:root[data-theme="light"]{ color-scheme:light; --bg:#f5f7fa; --panel:#fff; --panel2:#eef2f7; --line:#dde3ea;
+       --txt:#131820; --dim:#5d6b7a; --accent:#1a5fd0; --accent2:#6d4bd6;
+       --gold:#a9761a; --green:#127a52; --red:#b3261e;
+       --shadow:0 1px 2px rgba(16,24,40,.06), 0 8px 24px rgba(16,24,40,.08);
+       --shadow-sm:0 1px 3px rgba(16,24,40,.08);
+       --ring:0 0 0 3px rgba(26,95,208,.25); }
+/* Zonsondergang: warm accent op diep violet, met een zachte gloed. */
+:root[data-theme="sunset"]{
+  --bg:#180f2b; --panel:#231640; --panel2:#2f1e52; --line:#402a6b;
+  --txt:#f6eefe; --dim:#bda6e0; --accent:#ff8a5c; --accent2:#ff5f9e;
+  --gold:#ffcf6b; --green:#63d6a3; --red:#ff8a8a;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 34px rgba(120,30,110,.4);
+  --shadow-sm:0 1px 3px rgba(0,0,0,.4);
+  --ring:0 0 0 3px rgba(255,138,92,.45);
+}
+:root[data-theme="sunset"] body{
+  background-image:
+    radial-gradient(900px 460px at 100% -8%, rgba(255,95,158,.18), transparent 60%),
+    radial-gradient(760px 460px at -8% 108%, rgba(255,138,92,.14), transparent 60%);
+  background-repeat:no-repeat;
+}
+/* Jeroen: amberkleurig, met kleine Pokémon-fossielen (Helix + Dome) op de achtergrond. */
+:root[data-theme="jeroen"]{
+  --bg:#1f170e; --panel:#2b2015; --panel2:#392b1c; --line:#4e3c26;
+  --txt:#f6ead4; --dim:#c6ac82; --accent:#e0a54a; --accent2:#c9772e;
+  --gold:#f2c85a; --green:#8bbf5f; --red:#e0846b;
+  --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 30px rgba(40,25,5,.5);
+  --shadow-sm:0 1px 3px rgba(0,0,0,.45);
+  --ring:0 0 0 3px rgba(224,165,74,.45);
+}
+:root[data-theme="jeroen"] body{
+  background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxNjAnIGhlaWdodD0nMTYwJyB2aWV3Qm94PScwIDAgMTYwIDE2MCcgZmlsbD0nbm9uZScgc3Ryb2tlPScjZTBhNTRhJyBzdHJva2Utd2lkdGg9JzEuNicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJyBvcGFjaXR5PScwLjUnPjxnIHRyYW5zZm9ybT0icm90YXRlKC0xMiA1MCA1NSkiPjxwYXRoIGQ9Ik01MC4wIDU1LjAgTDUwLjQgNTUuNSBMNTAuNCA1Ni4xIEw1MC4wIDU2LjcgTDQ5LjQgNTcuMiBMNDguNCA1Ny4zIEw0Ny40IDU3LjAgTDQ2LjQgNTYuMyBMNDUuNyA1NS4xIEw0NS40IDUzLjYgTDQ1LjYgNTIuMCBMNDYuNSA1MC40IEw0Ny45IDQ5LjEgTDQ5LjggNDguMyBMNTIuMCA0OC4xIEw1NC4zIDQ4LjcgTDU2LjUgNTAuMCBMNTguMSA1Mi4xIEw1OS4xIDU0LjcgTDU5LjIgNTcuNyBMNTguMyA2MC43IEw1Ni40IDYzLjMgTDUzLjcgNjUuMyBMNTAuMyA2Ni40IEw0Ni43IDY2LjQgTDQzLjAgNjUuMiBMMzkuOSA2Mi44IEwzNy42IDU5LjQgTDM2LjMgNTUuNCBMMzYuNSA1MS4wIEwzOC4wIDQ2LjggTDQwLjggNDMuMSBMNDQuOCA0MC40IEw0OS42IDM5LjEgTDU0LjYgMzkuMyBMNTkuNSA0MS4yIEw2My42IDQ0LjUgTDY2LjYgNDkuMSBMNjguMSA1NC41IEw2Ny44IDYwLjIgTDY1LjcgNjUuNyBMNjEuOCA3MC40IEw1Ni43IDczLjcgTDUwLjYgNzUuMyBMNDQuMiA3NC45IEwzOC4xIDcyLjQgTDMyLjkgNjguMiBMMjkuMyA2Mi40IEwyNy42IDU1LjYgTDI4LjEgNDguNiBMMzAuOCA0MS44IEwzNS41IDM2LjIgTDQxLjkgMzIuMyBMNDkuMyAzMC40IEw1Ny4wIDMxLjAiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjU1IiByPSIyNyIvPjwvZz48ZyB0cmFuc2Zvcm09InJvdGF0ZSg4IDEyMCAxMTgpIj48cGF0aCBkPSJNOTguMCAxMzAgQSAyMiAyMiAwIDAgMSAxNDIuMCAxMzAgTTEwMi40IDEzMCBMMTAyLjQgMTE4LjggTTExMS4yIDEzMCBMMTExLjIgMTExLjggTTEyMC4wIDEzMCBMMTIwLjAgMTEwLjAgTTEyOC44IDEzMCBMMTI4LjggMTExLjggTTEzNy42IDEzMCBMMTM3LjYgMTE4LjgiLz48L2c+PGcgdHJhbnNmb3JtPSJyb3RhdGUoMjAgMTI2IDQyKSI+PHBhdGggZD0iTTEyNi4wIDQyLjAgTDEyNi4yIDQyLjMgTDEyNi4yIDQyLjcgTDEyNi4wIDQzLjEgTDEyNS42IDQzLjMgTDEyNS4wIDQzLjQgTDEyNC40IDQzLjIgTDEyMy44IDQyLjggTDEyMy40IDQyLjEgTDEyMy4yIDQxLjIgTDEyMy40IDQwLjIgTDEyMy45IDM5LjIgTDEyNC43IDM4LjQgTDEyNS45IDM3LjkgTDEyNy4yIDM3LjggTDEyOC42IDM4LjIgTDEyOS45IDM5LjAgTDEzMC45IDQwLjIgTDEzMS41IDQxLjggTDEzMS41IDQzLjYgTDEzMS4wIDQ1LjQgTDEyOS45IDQ3LjAgTDEyOC4yIDQ4LjIgTDEyNi4yIDQ4LjkgTDEyNC4wIDQ4LjkgTDEyMS44IDQ4LjEgTDExOS45IDQ2LjcgTDExOC41IDQ0LjcgTDExNy43IDQyLjIgTDExNy44IDM5LjYgTDExOC43IDM3LjAgTDEyMC41IDM0LjggTDEyMi45IDMzLjIgTDEyNS43IDMyLjQgTDEyOC44IDMyLjUgTDEzMS43IDMzLjYgTDEzNC4yIDM1LjYgTDEzNi4xIDM4LjQgTDEzNi45IDQxLjcgTDEzNi44IDQ1LjIgTDEzNS41IDQ4LjUgTDEzMy4yIDUxLjMgTDEzMC4wIDUzLjMiLz48Y2lyY2xlIGN4PSIxMjYiIGN5PSI0MiIgcj0iMTMuNSIvPjwvZz48ZyB0cmFuc2Zvcm09InJvdGF0ZSgtNiAzNCAxMjgpIj48cGF0aCBkPSJNMjAuMCAxMzggQSAxNCAxNCAwIDAgMSA0OC4wIDEzOCBNMjIuOCAxMzggTDIyLjggMTMxLjYgTTI4LjQgMTM4IEwyOC40IDEyNy4yIE0zNC4wIDEzOCBMMzQuMCAxMjYuMCBNMzkuNiAxMzggTDM5LjYgMTI3LjIgTTQ1LjIgMTM4IEw0NS4yIDEzMS42Ii8+PC9nPjwvc3ZnPg==");
 }
 *{box-sizing:border-box}
 :focus-visible{outline:none;box-shadow:var(--ring);border-radius:8px}
@@ -222,6 +262,13 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
     <label class="chk"><input type="checkbox" id="wantEn" checked> Engelse kaarten</label>
     <label class="chk"><input type="checkbox" id="wantJp" checked> Japanse kaarten</label>
     <button id="csv" disabled>Exporteer CSV</button>
+    <select id="theme" title="Kies een thema" aria-label="Thema kiezen">
+      <option value="auto">Thema: systeem</option>
+      <option value="dark">Thema: donker</option>
+      <option value="light">Thema: licht</option>
+      <option value="sunset">Thema: zonsondergang</option>
+      <option value="jeroen">Thema: Jeroen (fossielen)</option>
+    </select>
   </div>
   <div class="examples">Snel proberen:
     <a data-ex="Omanyte, Omastar">Omanyte + Omastar</a> ·
@@ -562,10 +609,6 @@ function pcSearch(c){
   return 'https://www.pricecharting.com/search-products?type=prices&q=' +
          encodeURIComponent(`${c.name} ${c.set} ${c.number}`);
 }
-function bulba(c){
-  return 'https://bulbapedia.bulbagarden.net/w/index.php?search=' +
-         encodeURIComponent(`${c.name} (${c.set} ${c.number}) TCG`);
-}
 // Directe productpagina als de API die geeft, anders een zoekopdracht op Cardmarket zelf.
 function cmLink(c){
   return c.cmUrl || 'https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=' +
@@ -603,8 +646,7 @@ function cardHTML(c){
            title="Klik om op TCGplayer te openen"><b>${money(c.usd,'USD')}</b><span>TCGplayer ↗</span></a>
       </div>
       <div class="links">
-        <a href="${h(pcSearch(c))}" target="_blank" rel="noopener">PriceCharting (graded)</a>
-        <a href="${h(bulba(c))}" target="_blank" rel="noopener">Bulbapedia</a>
+        <a href="${h(pcSearch(c))}" target="_blank" rel="noopener">PriceCharting (graded) ↗</a>
       </div>
     </div></div>`;
 }
@@ -647,7 +689,6 @@ function openCard(i){
         <a class="btn" href="${h(cmLink(c))}" target="_blank" rel="noopener">Bekijk op Cardmarket</a>
         ${c.tpUrl ? `<a class="btn" href="${h(c.tpUrl)}" target="_blank" rel="noopener">TCGplayer</a>` : ''}
         <a class="btn" href="${h(pcSearch(c))}" target="_blank" rel="noopener">PriceCharting</a>
-        <a class="btn" href="${h(bulba(c))}" target="_blank" rel="noopener">Bulbapedia</a>
         ${c.imgBig ? `<a class="btn" href="${h(c.imgBig)}" target="_blank" rel="noopener">Afbeelding</a>` : ''}
       </div>
       <div class="meta" style="margin-top:10px">Kaart ${i + 1} van ${VIEW.length} —
@@ -724,6 +765,17 @@ document.addEventListener('keydown', e => {
   if (e.key === 'ArrowLeft') stepCard(-1);
   if (e.key === 'ArrowRight') stepCard(1);
 });
+// thema: keuze toepassen en onthouden
+const themeSel = document.getElementById('theme');
+function applyTheme(t){
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem('tcgtheme', t); } catch(e){ /* privémodus: dan niet onthouden */ }
+}
+(function(){ let t = 'auto';
+  try { t = localStorage.getItem('tcgtheme') || 'auto'; } catch(e){}
+  themeSel.value = t; document.documentElement.dataset.theme = t;
+})();
+themeSel.addEventListener('change', () => applyTheme(themeSel.value));
 document.getElementById('go').addEventListener('click', run);
 document.getElementById('q').addEventListener('keydown', e => { if (e.key === 'Enter') run(); });
 document.getElementById('csv').addEventListener('click', toCSV);

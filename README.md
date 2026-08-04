@@ -21,6 +21,16 @@ Daarom:
 Test bij elke wijziging dus ook even op een smal scherm (of de mobiele weergave van je browser)
 voordat je hem online zet.
 
+## Thema's
+
+Rechtsboven in de zoekbalk kies je een thema; je keuze wordt onthouden op je apparaat.
+
+- **Systeem** — volgt automatisch de licht/donker-stand van je telefoon of computer.
+- **Donker** en **Licht** — vaste keuze, ongeacht je systeeminstelling.
+- **Zonsondergang** — diep violet met een warm oranje/roze accent.
+- **Jeroen** — amberkleurig thema met kleine Pokémon-fossielen (Helix- en Dome-fossiel)
+  als patroon op de achtergrond. Puur voor de sier.
+
 ## Online zetten via GitHub Pages
 
 De zoeker haalt kaartgegevens en prijzen op bij twee open API's. Browsers staan dat alleen toe
