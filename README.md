@@ -129,19 +129,26 @@ ook — GitHub vraagt dan om de vervanging te bevestigen.
 
 Het camera-icoon naast de zoekbalk herkent een kaart van een foto (naam + kaartnummer) en
 zoekt die meteen op. Dat gebeurt door de foto naar een klein serverfunctietje te sturen dat
-op zijn beurt het vision-model van [Anthropic](https://www.anthropic.com/) (Claude) bevraagt.
-Waarom een server? Omdat je API-sleutel geheim moet blijven — die mag nooit in de openbare
-`index.html` staan. De serverfunctie (`api/identify.js`) bewaart de sleutel veilig en geeft
-alleen de herkende kaart terug.
+op zijn beurt een vision-model bevraagt. Waarom een server? Omdat je API-sleutel geheim moet
+blijven — die mag nooit in de openbare `index.html` staan. De serverfunctie (`api/identify.js`)
+bewaart de sleutel veilig en geeft alleen de herkende kaart terug.
 
 Dit is **optioneel**: laat je het weg, dan werkt de rest van de zoeker gewoon; het camera-icoon
 geeft dan een nette melding.
 
-### Wat je nodig hebt
+### Kies een vision-model (gratis kan!)
 
-- Een **Anthropic API-sleutel** — aanmaken op [console.anthropic.com](https://console.anthropic.com/)
-  (je zet er zelf een klein tegoed op; per foto kost herkenning doorgaans een fractie van een cent).
-- Een gratis **[Vercel](https://vercel.com/)**-account (host de serverfunctie kosteloos).
+De serverfunctie werkt met twee aanbieders en kiest automatisch degene waarvan je een sleutel
+instelt:
+
+- **Google Gemini — gratis.** Er is een gratis tier die ruim voldoende is om kaarten te scannen,
+  **zonder creditcard**. Haal een sleutel op via [aistudio.google.com](https://aistudio.google.com/)
+  (Google-account → *Get API key*). Dit is de aanbevolen optie.
+- **Anthropic Claude — betaald.** Sleutel via [console.anthropic.com](https://console.anthropic.com/);
+  je zet er zelf een klein tegoed op (per foto een fractie van een cent).
+
+Verder heb je een gratis **[Vercel](https://vercel.com/)**-account nodig (host de serverfunctie
+kosteloos).
 
 ### De makkelijkste manier: alles op Vercel
 
@@ -152,9 +159,9 @@ het camera-icoon meteen — je hoeft in de zoeker niets in te stellen.
    in je GitHub-repository staan.
 2. Log in op [vercel.com](https://vercel.com/) met je GitHub-account en klik **Add New… → Project**.
 3. Kies je `tcg-zoeker`-repository en klik **Import**. Framework: **Other** (geen build nodig).
-4. Vouw **Environment Variables** open en voeg toe:
-   - **Name**: `ANTHROPIC_API_KEY` — **Value**: je Anthropic-sleutel.
-   - *(optioneel)* **Name**: `ANTHROPIC_MODEL` — **Value**: een ander Claude-model als je dat wilt.
+4. Vouw **Environment Variables** open en voeg één sleutel toe:
+   - Gratis: **Name** `GEMINI_API_KEY` — **Value** je Gemini-sleutel. *(optioneel `GEMINI_MODEL`)*
+   - Of betaald: **Name** `ANTHROPIC_API_KEY` — **Value** je Anthropic-sleutel. *(optioneel `ANTHROPIC_MODEL`)*
 5. Klik **Deploy**. Na een halve minuut krijg je een adres zoals
    `https://tcg-zoeker.vercel.app` — open dat en het camera-icoon werkt.
 
@@ -172,8 +179,9 @@ serverfunctie op Vercel:
 ### Wat er met je foto gebeurt
 
 De foto wordt in de browser verkleind en één keer naar je eigen serverfunctie gestuurd, die hem
-aan Anthropic doorgeeft om de kaart af te lezen. Er wordt niets van de foto bewaard. Alleen jij
-gebruikt je eigen sleutel en betaalt je eigen (zeer kleine) API-verbruik.
+aan het gekozen vision-model (Gemini of Claude) doorgeeft om de kaart af te lezen. Er wordt niets
+van de foto bewaard. Alleen jij gebruikt je eigen sleutel; bij Gemini blijf je binnen de gratis
+tier, bij Anthropic betaal je je eigen (zeer kleine) verbruik.
 
 ## Privacy en kosten
 

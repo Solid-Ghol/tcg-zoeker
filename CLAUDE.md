@@ -48,8 +48,10 @@ Dit bestand is voor Claude (en andere ontwikkelaars): huisregels die bij elke wi
   verkleind (canvas, ±1024px, JPEG) en als base64 naar een instelbaar endpoint gePOST
   (`photoEndpoint()` — standaard `/api/identify`, override via `localStorage` `tcgphoto` +
   het veld in `#settingspanel`). Het endpoint (`api/identify.js`, een Vercel-serverfunctie)
-  praat met de Anthropic vision-API; de API-sleutel staat als omgevingsvariabele
-  `ANTHROPIC_API_KEY` op de server, NOOIT in `index.html`. Antwoord = `{name, number, set}`;
+  praat met een vision-model en kiest automatisch de provider op basis van de aanwezige
+  omgevingsvariabele: `GEMINI_API_KEY` (Google Gemini, GRATIS tier — voorkeur) óf
+  `ANTHROPIC_API_KEY` (Claude, betaald). De sleutel staat server-side, NOOIT in `index.html`.
+  Antwoord = `{name, number, set}`;
   daarna wordt `#q` gevuld, `run()` uitgevoerd en de exacte kaart geopend
   (`revealPhotoMatch()`, matcht op kaartnummer + set). De site blijft een statisch bestand:
   zonder endpoint werkt al het andere gewoon door.
