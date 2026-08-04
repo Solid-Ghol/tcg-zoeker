@@ -340,6 +340,7 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
   <symbol id="i-dl" viewBox="0 0 24 24"><path d="M12 4v10m0 0l-4.5-4.5M12 14l4.5-4.5M4 19h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></g></symbol>
   <symbol id="i-sliders" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h9M19 7h1M4 17h3M13 17h7"/><circle cx="16" cy="7" r="2.4"/><circle cx="9.5" cy="17" r="2.4"/></g></symbol>
+  <symbol id="i-cam" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h2l1.2-1.9a1 1 0 0 1 .85-.47h5.9a1 1 0 0 1 .85.47L19 7h0a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.3"/></g></symbol>
 </defs></svg>
 <header>
   <h1><span class="ball" aria-hidden="true"></span>Pokémon TCG-zoeker
@@ -366,6 +367,11 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
         <option value="ptcg">pokemontcg.io</option>
         <option value="tcgdex">TCGdex</option>
       </select></label>
+    <label>Foto-herkenning (optioneel)
+      <input type="text" id="photoEndpoint" placeholder="/api/identify (standaard)" autocomplete="off" spellcheck="false">
+      <span style="font-size:11px;color:var(--dim);line-height:1.45">Voor het camera-icoon naast de zoekbalk.
+        Leeg laten als de site op Vercel draait; op GitHub Pages vul je hier de volledige
+        Vercel-URL in (zie README).</span></label>
     <label>Collectie (staat alleen in deze browser)
       <span style="display:flex;gap:8px">
         <button id="colExport" style="flex:1" title="Bewaar je collectie als JSON-bestand"><svg class="ico" aria-hidden="true"><use href="#i-dl"/></svg>Back-up</button>
@@ -381,6 +387,8 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
     <button class="primary" id="go"><svg class="ico" aria-hidden="true"><use href="#i-lens"/></svg>Zoeken</button>
     <button id="reset" title="Maak het zoekveld leeg"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg>Wis</button>
     <button class="iconbtn" id="browseSets" title="Blader door alle sets" aria-label="Blader door alle sets"><svg class="ico" aria-hidden="true"><use href="#i-cards"/></svg></button>
+    <button class="iconbtn" id="photoBtn" title="Herken een kaart via een foto" aria-label="Herken een kaart via een foto"><svg class="ico" aria-hidden="true"><use href="#i-cam"/></svg></button>
+    <input type="file" id="photoFile" accept="image/*" capture="environment" hidden>
   </div>
   <div class="helppanel" id="helppanel">
     <b>Zo werkt het.</b> Typ één of meer namen, gescheiden door komma's, en klik op Zoeken.
@@ -389,6 +397,9 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
     De Japanse naam wordt automatisch opgezocht; lukt dat niet, geef hem dan zelf mee met een
     schuine streep — bijvoorbeeld <a data-ex="Professor's Research /博士の研究">Professor's Research
     / 博士の研究</a>. Een Japanse zoekterm mag je ook los intypen.
+    <br><b>Foto.</b> Met het camera-icoon naast de zoekbalk maak je een foto van een kaart;
+    de naam en het kaartnummer worden herkend en meteen opgezocht. Dit vraagt eenmalig een
+    kleine gratis serverfunctie — zie de README (<i>Foto-herkenning</i>).
     <br><b>Collectie.</b> Met <b>+ Collectie</b> bewaar je een kaart op dit apparaat; via de knop
     <b>Collectie</b> bekijk je alles terug, inclusief geschatte totale waarde en je voortgang
     per set — nogmaals klikken (of de terug-link) brengt je weer bij je zoekresultaten.
@@ -1262,6 +1273,104 @@ document.getElementById('setbrowser').addEventListener('click', e => {
 });
 // Pokémon-namen alvast ophalen voor de autocomplete zodra het zoekveld focus krijgt
 document.getElementById('q').addEventListener('focus', () => loadPokeNames().catch(() => {}), {once:true});
+
+/* ---------- foto-herkenning: kaart fotograferen -> naam + nummer -> zoeken ---------- */
+// Het endpoint is een kleine serverfunctie (zie README/Vercel) die de foto naar het
+// vision-model stuurt; de API-sleutel blijft op de server. De site zelf blijft een
+// statisch bestand: zonder endpoint werkt de rest gewoon door.
+const PHOTO_KEY = 'tcgphoto';
+function photoEndpointSetting(){
+  try { return (localStorage.getItem(PHOTO_KEY) || '').trim(); } catch(e){ return ''; }
+}
+// Niets ingesteld? Dan het standaardpad op dezelfde host proberen (werkt meteen op Vercel).
+function photoEndpoint(){ return photoEndpointSetting() || '/api/identify'; }
+const photoEndpointEl = document.getElementById('photoEndpoint');
+photoEndpointEl.value = photoEndpointSetting();
+photoEndpointEl.addEventListener('change', () => {
+  const v = photoEndpointEl.value.trim();
+  try { if (v) localStorage.setItem(PHOTO_KEY, v); else localStorage.removeItem(PHOTO_KEY); } catch(e){}
+});
+// De foto verkleinen (max ±1024px, JPEG) scheelt fors in uploadtijd en API-kosten.
+async function downscaleImage(file, max = 1024){
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => {
+      const im = new Image();
+      im.onload = () => res(im); im.onerror = () => rej(new Error('kon de foto niet lezen'));
+      im.src = url;
+    });
+    const scale = Math.min(1, max / Math.max(img.width, img.height));
+    const w = Math.max(1, Math.round(img.width * scale));
+    const h = Math.max(1, Math.round(img.height * scale));
+    const cv = document.createElement('canvas');
+    cv.width = w; cv.height = h;
+    cv.getContext('2d').drawImage(img, 0, 0, w, h);
+    return cv.toDataURL('image/jpeg', 0.85).split(',')[1];   // base64 zonder data:-prefix
+  } finally { URL.revokeObjectURL(url); }
+}
+let PHOTO_MATCH = null;
+async function identifyFromPhoto(file){
+  if (!file) return;
+  const endpoint = photoEndpoint();
+  toast('<span class="spinner"></span> Foto herkennen…', 0);
+  try {
+    const image = await downscaleImage(file);
+    const r = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image, media_type: 'image/jpeg' }),
+    });
+    let data = {};
+    try { data = await r.json(); } catch(e){ /* geen JSON terug */ }
+    if (r.status === 404 && !photoEndpointSetting()){
+      throw new Error('geen herkenning-endpoint gevonden. Draait de site op GitHub Pages? ' +
+        'Vul dan via het tandwiel de volledige Vercel-URL in (zie README).');
+    }
+    if (!r.ok) throw new Error((data && data.error) || ('endpoint gaf status ' + r.status));
+    const name = (data.name || '').toString().trim();
+    if (!name) throw new Error('geen kaart herkend op de foto — probeer een scherpere foto');
+    PHOTO_MATCH = { name, number: (data.number || '').toString().trim(), set: (data.set || '').toString().trim() };
+    hideToast();
+    document.getElementById('q').value = name;
+    document.getElementById('mode').value = 'auto';
+    await run();
+    revealPhotoMatch();
+  } catch(e){
+    toast('<span class="err">Foto herkennen mislukt: ' + h(e.message) + '</span>', 14000);
+  }
+}
+// Na de zoekactie de herkende kaart proberen te openen (op kaartnummer, evt. binnen de set).
+function revealPhotoMatch(){
+  if (!PHOTO_MATCH) return;
+  const { name, number, set } = PHOTO_MATCH;
+  PHOTO_MATCH = null;
+  const norm = s => String(s || '').toLowerCase().replace(/^0+/, '');
+  const setMatch = c => !set || (c.set || '').toLowerCase().includes(set.toLowerCase()) ||
+                        set.toLowerCase().includes((c.set || '').toLowerCase());
+  let idx = -1;
+  if (number){
+    idx = VIEW.findIndex(c => norm(c.number) === norm(number) && setMatch(c));
+    if (idx < 0) idx = VIEW.findIndex(c => norm(c.number) === norm(number));
+  }
+  const info = 'Herkend: <b>' + h(name) + '</b>' +
+    (number ? ' · #' + h(number) : '') + (set ? ' · ' + h(set) : '');
+  if (idx >= 0){
+    openCard(idx);
+    toast(info + ' — de kaart staat open. Klopt het niet? Pas de zoekterm hierboven aan.', 9000);
+  } else if (VIEW.length){
+    toast(info + (number ? ' — kaart #' + h(number) + ' niet exact gevonden; bekijk de resultaten.'
+                         : ' — bekijk de resultaten.'), 11000);
+  } else {
+    toast(info + ' — geen kaarten gevonden; controleer of de naam klopt.', 11000);
+  }
+}
+document.getElementById('photoBtn').addEventListener('click', () =>
+  document.getElementById('photoFile').click());
+document.getElementById('photoFile').addEventListener('change', e => {
+  const f = e.target.files[0];
+  e.target.value = '';               // zelfde foto opnieuw kiezen moet ook opnieuw triggeren
+  if (f) identifyFromPhoto(f);
+});
 
 // scroll-hint op de filterbalk: pijltje tonen zolang er rechts meer te vegen valt
 const CSCROLL = document.getElementById('cscroll');
