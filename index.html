@@ -828,12 +828,14 @@ function marketName(c){
   return isJapanese(c.name) && c.q && !isJapanese(c.q) ? c.q : c.name;
 }
 function pcSearch(c){
-  // PriceCharting kent Japanse kaarten als aparte "Japanese"-sets; de Japanse setnaam
-  // zelf levert daar niets op, het kaartnummer juist wel.
+  // PriceCharting noemt producten "Naam #Nummer" (de set is alleen een groepering):
+  // kaartnaam + kaartnummer is daar dus de beste zoeksleutel. Setnamen juist weglaten —
+  // die wijken bij PriceCharting af en elk niet-kloppend zoekwoord geeft nul resultaten.
+  // Japanse kaarten staan er als aparte "Japanese"-sets, vandaar het extra woord.
   const q = c.region === 'JP'
-    ? `${marketName(c)} japanese ${c.number}`
-    : `${c.name} ${c.set} ${c.number}`;
-  return 'https://www.pricecharting.com/search-products?type=prices&q=' + encodeURIComponent(q);
+    ? `pokemon japanese ${marketName(c)} ${c.number}`
+    : `pokemon ${c.name} ${c.number}`;
+  return 'https://www.pricecharting.com/search-products?type=prices&q=' + encodeURIComponent(q.trim());
 }
 // Directe productpagina als de API die geeft, anders een zoekopdracht op Cardmarket zelf.
 function cmLink(c){
@@ -974,7 +976,7 @@ function cardHTML(c){
         <a class="pr main" href="${h(cmLink(c))}" target="_blank" rel="noopener"
            title="${h(cmTitle(c))}"><b>${money(c.eur,'EUR')}${trendArrow(c)}</b><span>Cardmarket ↗</span></a>
         <a class="pr" href="${h(pcSearch(c))}" target="_blank" rel="noopener"
-           title="Ungraded- en graded-prijzen opzoeken bij PriceCharting"><b>ungraded</b><span>PriceCharting ↗</span></a>
+           title="Ungraded-prijs opzoeken bij PriceCharting (zoekt op naam + kaartnummer; graded staat op dezelfde pagina)"><b>ungraded</b><span>PriceCharting ↗</span></a>
       </div>
     </div></div>`;
 }
@@ -1022,7 +1024,7 @@ function openCard(i){
       </table>
       <h4>PriceCharting</h4>
       <table class="mtab">
-        <tr><th>Ungraded &amp; graded (PSA e.d.)</th><td><a href="${h(pcSearch(c))}" target="_blank" rel="noopener">prijzen opzoeken bij PriceCharting ↗</a></td></tr>
+        <tr><th>Ungraded-prijs</th><td><a href="${h(pcSearch(c))}" target="_blank" rel="noopener">opzoeken bij PriceCharting ↗</a> <span style="color:var(--dim)">(graded/PSA staat op dezelfde pagina)</span></td></tr>
       </table>
       <div class="mlinks">
         <button class="btn" id="mcol">${ico('i-ball')}${colHas(c) ? '✓ In collectie' : '+ Bewaar in collectie'}</button>

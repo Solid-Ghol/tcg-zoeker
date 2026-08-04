@@ -62,6 +62,9 @@ Dit bestand is voor Claude (en andere ontwikkelaars): huisregels die bij elke wi
   tekens of Japanse setnamen: bouw zoek-URL's altijd via `marketName()` (Engelse naam) en
   geef bij PriceCharting "japanese" + kaartnummer mee. Directe productlinks (`cmUrl`/`tpUrl`)
   hebben altijd voorrang boven een zoekopdracht.
+- **PriceCharting-zoekquery = "pokemon" + kaartnaam + kaartnummer** (producten heten daar
+  "Naam #Nummer"); setnamen weglaten, die wijken af en elk niet-kloppend zoekwoord geeft
+  daar nul resultaten. PC-prijzen tonen in de app kan alleen met hun betaalde API-token.
 - **Cardmarket is de primaire marktplaats** voor deze gebruikers: de EUR-pil staat voorop en
   krijgt visueel accent (`a.pr.main`). Directe links voor pokemontcg.io-kaarten volgen het
   vaste patroon `https://prices.pokemontcg.io/cardmarket/{id}` — bouw ze desnoods zelf uit
