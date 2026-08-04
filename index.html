@@ -1177,6 +1177,9 @@ function render(){
   const priceAsc = c => (price(c) < 0 ? Number.MAX_VALUE : price(c));
   if (sort === 'price_asc') list.sort((a,b) => priceAsc(a) - priceAsc(b));
   if (sort === 'name') list.sort((a,b) => a.name.localeCompare(b.name) || (a.set||'').localeCompare(b.set||''));
+  // Engelse kaarten altijd vóór Japanse (stabiele sortering behoudt de gekozen volgorde
+  // binnen elke taal); zo staat Engels bovenaan, ongeacht wat het eerst geladen werd.
+  list.sort((a,b) => (a.region === 'JP' ? 1 : 0) - (b.region === 'JP' ? 1 : 0));
   document.getElementById('count').textContent = list.length + ' van ' + CARDS.length + ' kaarten';
   requestAnimationFrame(updateScrollHint);   // filterbalk kan van breedte veranderd zijn
   VIEW = list;
@@ -1193,8 +1196,10 @@ function render(){
   } else if (grp === 'set'){
     const g = {};
     list.forEach(c => (g[c.set || 'Onbekende set'] = g[c.set || 'Onbekende set'] || []).push(c));
-    // sets op releasedatum, nieuwste bovenaan
-    Object.keys(g).sort((a,b) => (g[b][0].date||'').localeCompare(g[a][0].date||'')).forEach(k => {
+    // Engelse sets eerst, daarbinnen op releasedatum (nieuwste bovenaan)
+    Object.keys(g).sort((a,b) =>
+      ((g[a][0].region === 'JP' ? 1 : 0) - (g[b][0].region === 'JP' ? 1 : 0)) ||
+      (g[b][0].date||'').localeCompare(g[a][0].date||'')).forEach(k => {
       const first = g[k][0];
       const logo = first.setLogo
         ? `<img class="setlogo" referrerpolicy="no-referrer" src="${h(first.setLogo)}" alt=""
