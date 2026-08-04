@@ -4,15 +4,19 @@
 // geeft het resultaat terug als { name, number, set }. De API-sleutel blijft hier op de
 // server (omgevingsvariabele) en komt nooit in de browserpagina terecht.
 //
-// Drie providers worden ondersteund; de functie kiest automatisch de eerste waarvan een
+// Vier providers worden ondersteund; de functie kiest automatisch de eerste waarvan een
 // sleutel is ingesteld (in deze volgorde):
-//   1) GROQ_API_KEY    -> Groq (Llama vision) — GRATIS, geen creditcard nodig (aanbevolen).
-//   2) GEMINI_API_KEY  -> Google Gemini (gratis tier, maar niet in elke regio/account).
-//   3) ANTHROPIC_API_KEY -> Anthropic Claude (betaald).
+//   1) OPENROUTER_API_KEY -> OpenRouter (gratis vision-modellen, geen creditcard — aanbevolen).
+//   2) GROQ_API_KEY    -> Groq (Llama vision) — gratis, maar niet elk account heeft vision.
+//   3) GEMINI_API_KEY  -> Google Gemini (gratis tier, maar niet in elke regio/account).
+//   4) ANTHROPIC_API_KEY -> Anthropic Claude (betaald).
 // Zet in Vercel dus één van deze omgevingsvariabelen.
 //
-// Optioneel: GROQ_MODEL / GEMINI_MODEL / ANTHROPIC_MODEL om een ander model te kiezen.
+// Optioneel: OPENROUTER_MODEL / GROQ_MODEL / GEMINI_MODEL / ANTHROPIC_MODEL om een model te
+// forceren (anders wordt bij OpenRouter/Groq zelf een gratis vision-model gekozen).
 
+const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || '';
 const GROQ_KEY = process.env.GROQ_API_KEY;
 // GROQ_MODEL mag leeg blijven: dan zoekt de functie zelf een beschikbaar vision-model op
 // (Groq wisselt modelnamen geregeld, dus niet hardcoden).
@@ -44,6 +48,84 @@ function extractJSON(text){
   const m = text.match(/\{[\s\S]*\}/);
   if (m){ try { return JSON.parse(m[0]); } catch(e){ /* geef op */ } }
   return null;
+}
+
+// --- OpenRouter (gratis vision-modellen) — OpenAI-compatibel formaat ---
+// OpenRouter bundelt veel modellen; we kiezen automatisch een GRATIS model dat beeld aankan
+// (prijs 0 én image-invoer), zodat we geen modelnaam hoeven te hardcoden.
+let OR_CACHED_MODEL = null;
+async function openrouterFreeVisionModels(){
+  const r = await fetch('https://openrouter.ai/api/v1/models', {
+    headers: { 'authorization': 'Bearer ' + OPENROUTER_KEY },
+  });
+  const data = await r.json();
+  if (!r.ok){
+    const e = new Error((data && data.error && data.error.message) || ('OpenRouter gaf status ' + r.status));
+    e.status = 502; throw e;
+  }
+  const isFree = m => {
+    const p = m.pricing || {};
+    return String(p.prompt || '0') === '0' && String(p.completion || '0') === '0';
+  };
+  const takesImage = m => {
+    const inp = (m.architecture && (m.architecture.input_modalities || m.architecture.modality)) || '';
+    return Array.isArray(inp) ? inp.includes('image') : /image/.test(String(inp));
+  };
+  const rank = id => {
+    const s = id.toLowerCase();
+    if (s.includes('qwen') && (s.includes('vl') || s.includes('vision'))) return 0; // sterk in tekst lezen
+    if (s.includes('vision') || s.includes('-vl')) return 1;
+    return 2;
+  };
+  return (data.data || []).filter(m => isFree(m) && takesImage(m))
+    .map(m => m.id).sort((a, b) => rank(a) - rank(b));
+}
+async function openrouterComplete(model, image, mediaType){
+  const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'authorization': 'Bearer ' + OPENROUTER_KEY, 'content-type': 'application/json' },
+    body: JSON.stringify({
+      model,
+      temperature: 0,
+      max_tokens: 400,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'text', text: PROMPT },
+          { type: 'image_url', image_url: { url: 'data:' + mediaType + ';base64,' + image } },
+        ],
+      }],
+    }),
+  });
+  const data = await r.json();
+  if (!r.ok){
+    const e = new Error((data && data.error && data.error.message) || ('OpenRouter gaf status ' + r.status));
+    e.status = 502; e.modelIssue = /model|not exist|no endpoints|not found|unavailable|deprecat/i.test(e.message);
+    throw e;
+  }
+  return (data.choices && data.choices[0] && data.choices[0].message &&
+          data.choices[0].message.content || '').trim();
+}
+async function askOpenRouter(image, mediaType){
+  const preferred = OPENROUTER_MODEL || OR_CACHED_MODEL;
+  const candidates = preferred ? [preferred] : await openrouterFreeVisionModels();
+  if (!candidates.length){
+    const e = new Error('Geen gratis vision-model beschikbaar op OpenRouter voor deze sleutel.');
+    e.status = 502; throw e;
+  }
+  let lastErr;
+  for (const model of candidates.slice(0, 4)){
+    try {
+      const text = await openrouterComplete(model, image, mediaType);
+      OR_CACHED_MODEL = model;
+      return text;
+    } catch(e){
+      lastErr = e;
+      if (!e.modelIssue) throw e;
+      OR_CACHED_MODEL = null;
+    }
+  }
+  throw lastErr;
 }
 
 // --- Groq (Llama vision, gratis) — OpenAI-compatibel formaat ---
@@ -183,9 +265,9 @@ module.exports = async function handler(req, res){
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Gebruik POST met een foto.' });
 
-  if (!GROQ_KEY && !GEMINI_KEY && !ANTHROPIC_KEY) return res.status(500).json({
-    error: 'De server heeft geen sleutel. Zet in Vercel GROQ_API_KEY (gratis via ' +
-      'console.groq.com), GEMINI_API_KEY óf ANTHROPIC_API_KEY.' });
+  if (!OPENROUTER_KEY && !GROQ_KEY && !GEMINI_KEY && !ANTHROPIC_KEY) return res.status(500).json({
+    error: 'De server heeft geen sleutel. Zet in Vercel OPENROUTER_API_KEY (gratis via ' +
+      'openrouter.ai), GROQ_API_KEY, GEMINI_API_KEY óf ANTHROPIC_API_KEY.' });
 
   try {
     // req.body kan al geparsed zijn (Vercel) of nog een string; beide opvangen.
@@ -195,8 +277,9 @@ module.exports = async function handler(req, res){
     const mediaType = (body && body.media_type) || 'image/jpeg';
     if (!image) return res.status(400).json({ error: 'Geen afbeelding meegestuurd.' });
 
-    // Eerste beschikbare provider wint (Groq gratis > Gemini > Anthropic).
-    const text = GROQ_KEY ? await askGroq(image, mediaType)
+    // Eerste beschikbare provider wint (OpenRouter > Groq > Gemini > Anthropic).
+    const text = OPENROUTER_KEY ? await askOpenRouter(image, mediaType)
+               : GROQ_KEY ? await askGroq(image, mediaType)
                : GEMINI_KEY ? await askGemini(image, mediaType)
                : await askAnthropic(image, mediaType);
 
