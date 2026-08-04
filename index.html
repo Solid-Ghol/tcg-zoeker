@@ -646,6 +646,11 @@ async function fetchTcgdex(name, lang, mode, jpTerm){
   list = list || [];
   const out = list.map(c => {
     const setId = String(c.id || '').split('-')[0];
+    // Engelse TCGdex-kaarten: bouw de vaste Cardmarket-redirect op uit het kaart-id.
+    // TCGdex en pokemontcg.io delen (vrijwel) dezelfde set-codes; normaliseer alleen
+    // voorloopnullen (sv03 -> sv3) en halve sets (sv3.5 -> sv3pt5).
+    const pid = lang === 'en' && c.id
+      ? String(c.id).replace(/^([a-z]+)0+(\d)/, '$1$2').replace('.5', 'pt5') : '';
     return {
       id: c.id || '', q: name, region: lang === 'ja' ? 'JP' : 'EN', name: c.name,
       set: sets[setId] || setId, setSeries: '', date: '',
@@ -653,7 +658,8 @@ async function fetchTcgdex(name, lang, mode, jpTerm){
       supertype: '', subtypes: [], hp: '', attacks: [], weaknesses: [], resistances: [],
       retreat: null, artist: '', setLogo: '',
       img: c.image ? c.image + '/low.webp' : '', imgBig: c.image ? c.image + '/high.webp' : '',
-      usd: null, eur: null, cmLow: null, cmAvg30: null, cmUrl: '', _id: c.id,
+      usd: null, eur: null, cmLow: null, cmAvg30: null,
+      cmUrl: pid ? 'https://prices.pokemontcg.io/cardmarket/' + pid : '', _id: c.id,
     };
   });
   return out;
@@ -691,8 +697,9 @@ async function addTcgdexPrices(cards, lang, max = 60){
           c.cmLowEx = lowEx != null;
           c.cmAvg30 = digPrice(cm, ['avg30','avg']);
           c.usd = digPrice(p.tcgplayer || {}, ['marketPrice','market','mid','directLow','lowPrice']);
-          // levert TCGdex een directe Cardmarket-link mee, gebruik die dan voor de prijsknop
-          if (!c.cmUrl && cm && typeof cm.url === 'string' && cm.url.startsWith('http')) c.cmUrl = cm.url;
+          // levert TCGdex zelf een directe Cardmarket-link mee, dan wint die van onze
+          // geconstrueerde redirect (die is een gok op basis van het kaart-id)
+          if (cm && typeof cm.url === 'string' && cm.url.startsWith('http')) c.cmUrl = cm.url;
         }
       } catch(e){ /* prijs is optioneel */ }
     }));

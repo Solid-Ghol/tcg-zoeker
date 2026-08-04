@@ -68,7 +68,11 @@ Dit bestand is voor Claude (en andere ontwikkelaars): huisregels die bij elke wi
 - **Cardmarket is de primaire marktplaats** voor deze gebruikers: de EUR-pil staat voorop en
   krijgt visueel accent (`a.pr.main`). Directe links voor pokemontcg.io-kaarten volgen het
   vaste patroon `https://prices.pokemontcg.io/cardmarket/{id}` — bouw ze desnoods zelf uit
-  het kaart-id, dan komt de knop ook zonder prijsblok op de juiste kaart uit.
+  het kaart-id, dan komt de knop ook zonder prijsblok op de juiste kaart uit. Ook voor
+  Engelse TCGdex-kaarten (terugvalroute als pokemontcg.io hapert) wordt die redirect
+  opgebouwd uit het genormaliseerde kaart-id (sv03→sv3, .5→pt5); een expliciete
+  Cardmarket-URL uit TCGdex-prijsdata wint altijd. Japanse kaarten kunnen alleen op
+  Engelse naam zoeken — Cardmarket voert de meeste Japanse kaarten niet.
 - **Cardmarket-prijsvelden**: `trendPrice` is de globale markttrend (conditie-onafhankelijk,
   in de praktijk gedreven door Near Mint-verkopen). De kale `lowPrice` telt álle condities mee
   (ook Played/Damaged) en is dus onbetrouwbaar laag — gebruik `lowPriceExPlus` (Excellent of
