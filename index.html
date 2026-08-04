@@ -83,6 +83,7 @@ header::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;
 h1{margin:0 0 4px;font-size:26px;letter-spacing:-.015em;display:flex;align-items:center;gap:11px;flex-wrap:wrap}
 .hbtns{margin-left:auto;display:flex;gap:8px;align-items:center}
 .hbtns button{font-size:13.5px}
+.hbtns button.on{border-color:var(--green);color:var(--green)}
 .iconbtn{padding:8px}
 .iconbtn .ico{margin:0;vertical-align:-2px}
 /* knoppengroep (weergave-schakelaar) */
@@ -247,18 +248,22 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
   /* 16px voorkomt dat Safari inzoomt zodra een veld focus krijgt */
   input,select,button{font-size:16px;padding:10px 12px}
   input[type=search],input[type=text]{min-width:0}
+  /* zoekbalk op één regel: veld + Zoeken + Wis, vinkjes eronder */
   .searchbar{gap:8px}
-  .searchbar #q{flex:1 1 100%}
-  .searchbar #go{flex:1 1 calc(60% - 4px)}
-  .searchbar #reset{flex:1 1 calc(40% - 4px)}
-  .searchbar .chk{flex:1 1 calc(50% - 4px);font-size:14px}
-  .stabs{display:flex;width:100%}
-  .stab{flex:1;padding:10px 8px}
+  .searchbar #q{flex:1 1 130px;min-width:0}
+  .searchbar .chk{font-size:13.5px}
   .settings{position:static;width:100%;margin-top:10px}
   .hbtns{gap:6px}
-  .controls input,.controls select{flex:1 1 100%}
-  .count{margin-left:0;flex:1 1 100%}
-  .flabel{flex:1 1 100%}
+  /* filterbalk: één horizontaal veegbare regel in plaats van een hoge stapel */
+  .controls{flex-wrap:nowrap;overflow-x:auto;gap:6px;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none}
+  .controls::-webkit-scrollbar{display:none}
+  .controls .flabel{display:none}
+  .controls input{flex:0 0 150px;min-width:150px}
+  .controls select,.controls button{flex:0 0 auto;width:auto}
+  .controls .stabs{flex:0 0 auto}
+  .controls .stab{padding:9px 12px}
+  .count{margin-left:0;flex:0 0 auto;white-space:nowrap}
   .grid{grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px}
   .nm{font-size:13px}
   .pr b{font-size:12px}
@@ -276,9 +281,6 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
   .examples{margin-top:10px}
   .examples .exlbl{display:none}
   .schip{font-size:13px;padding:5px 12px}
-  /* filter- en sorteervelden twee naast elkaar in plaats van onder elkaar */
-  .controls input{flex:1 1 100%}
-  .controls select{flex:1 1 calc(50% - 4px);min-width:0}
   /* volledig uitgeschreven label past niet in een smal prijsvak */
   .pr span{text-transform:none;letter-spacing:0;font-size:10px}
   /* de knoppen ‹ › zweven onderaan; laat daar ruimte voor vrij */
@@ -347,6 +349,13 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
         <option value="ptcg">pokemontcg.io</option>
         <option value="tcgdex">TCGdex</option>
       </select></label>
+    <label>Collectie (staat alleen in deze browser)
+      <span style="display:flex;gap:8px">
+        <button id="colExport" style="flex:1" title="Bewaar je collectie als JSON-bestand"><svg class="ico" aria-hidden="true"><use href="#i-dl"/></svg>Back-up</button>
+        <button id="colImport" style="flex:1" title="Lees een eerder gemaakte back-up in (voegt samen met wat er al is)"><svg class="ico" aria-hidden="true"><use href="#i-ball"/></svg>Herstel</button>
+      </span>
+      <input type="file" id="colFile" accept=".json,application/json" hidden>
+    </label>
   </div>
   <div class="searchbar">
     <input type="text" id="q" placeholder="Zoek een Pokémon, kaart of set — bijv. Omanyte, Kabutops" autocomplete="off" list="setlist">
@@ -375,7 +384,9 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
     / 博士の研究</a>. Een Japanse zoekterm mag je ook los intypen.
     <br><b>Collectie.</b> Met <b>+ Collectie</b> bewaar je een kaart op dit apparaat; via de knop
     <b>Collectie</b> bekijk je alles terug, inclusief geschatte totale waarde en je voortgang
-    per set. <b>Deel</b> kopieert een link die dezelfde zoekopdracht opent. Het pijltje
+    per set — nogmaals klikken (of de terug-link) brengt je weer bij je zoekresultaten.
+    Via het tandwiel maak je een back-up van je collectie of lees je er een in.
+    <b>Deel</b> kopieert een link die dezelfde zoekopdracht opent. Het pijltje
     ▲/▼ bij een prijs laat zien of de trendprijs boven of onder het 30-dagengemiddelde ligt.
   </div>
   <div class="setbrowser" id="setbrowser"></div>
@@ -705,6 +716,7 @@ async function run(){
         return { term: left, ja: right || '' };
       });
   if (!entries.length) return;
+  if (COLVIEW){ COLVIEW = false; SAVEDVIEW = null; updateColBtn(); }  // nieuwe zoekopdracht sluit de collectieweergave
   updateURL();
   const mode = document.getElementById('mode').value;
   const prefer = document.getElementById('src').value;
@@ -810,7 +822,11 @@ function colToggle(c){
 }
 function updateColBtn(){
   const n = Object.keys(COL).length;
-  document.getElementById('colBtn').innerHTML = ico('i-ballfill') + 'Collectie' + (n ? ` (${n})` : '');
+  const b = document.getElementById('colBtn');
+  b.innerHTML = COLVIEW
+    ? ico('i-x') + 'Collectie sluiten'
+    : ico('i-ballfill') + 'Collectie' + (n ? ` (${n})` : '');
+  b.classList.toggle('on', COLVIEW);
 }
 // Zoek je een kaart opnieuw op, dan worden de bewaarde prijzen meteen ververst.
 function refreshColPrices(){
@@ -829,23 +845,53 @@ function refreshColPrices(){
 function estValue(list){
   return list.reduce((s, c) => s + (c.eur != null ? c.eur : (c.usd != null ? c.usd * 0.92 : 0)), 0);
 }
+// De collectieknop is een schakelaar: openen bewaart je zoekresultaten, sluiten zet ze terug.
+let COLVIEW = false, SAVEDVIEW = null;
 function showCollection(){
+  if (COLVIEW) return exitCollection();
   const items = Object.values(COL);
   if (!items.length){
     setStatus('Je collectie is nog leeg — klik bij een kaart op <b>+ Collectie</b> om hem te bewaren.');
     return;
   }
+  SAVEDVIEW = { cards: CARDS, status: S.innerHTML, statusOn: S.className,
+                controls: document.getElementById('controls').className };
+  COLVIEW = true;
+  updateColBtn();
   CARDS = items.map(c => ({...c}));
   const priced = CARDS.filter(c => c.eur != null || c.usd != null).length;
   document.getElementById('csv').disabled = false;
   document.getElementById('controls').className = 'controls on';
   populateFilters();
-  setStatus(`${ico('i-ballfill')} Collectie: ${CARDS.length} kaart${CARDS.length === 1 ? '' : 'en'} — geschatte waarde ` +
+  setStatus(`${ico('i-ballfill')} Je bekijkt je <b>collectie</b>: ${CARDS.length} kaart${CARDS.length === 1 ? '' : 'en'} — geschatte waarde ` +
     `<b>${money(estValue(CARDS), 'EUR')}</b>` +
     (priced < CARDS.length ? ` (${CARDS.length - priced} kaarten zonder prijsdata)` : '') +
-    '. Bewaard op dit apparaat; prijzen verversen zodra je een kaart opnieuw opzoekt.');
+    `. <a id="colExit">← Terug naar je zoekresultaten</a>` +
+    '<br>Bewaard in deze browser; maak via het tandwiel een back-up. Prijzen verversen zodra je een kaart opnieuw opzoekt.');
   render();
 }
+function exitCollection(){
+  COLVIEW = false;
+  updateColBtn();
+  if (SAVEDVIEW && SAVEDVIEW.cards.length){
+    CARDS = SAVEDVIEW.cards;
+    S.innerHTML = SAVEDVIEW.status; S.className = SAVEDVIEW.statusOn;
+    document.getElementById('controls').className = SAVEDVIEW.controls;
+    document.getElementById('csv').disabled = !CARDS.length;
+    populateFilters();
+    render();
+  } else {
+    CARDS = [];
+    document.getElementById('controls').className = 'controls';
+    document.getElementById('csv').disabled = true;
+    S.className = 'status';
+    OUT.innerHTML = '<p class="empty">Collectie gesloten — typ hierboven een Pokémon en klik op Zoeken.</p>';
+  }
+}
+// de "terug"-link in de statusregel
+S.addEventListener('click', e => {
+  if (e.target.id === 'colExit'){ e.preventDefault(); exitCollection(); }
+});
 
 /* ---------- deelbare link naar de huidige zoekopdracht ---------- */
 function updateURL(){
@@ -1159,6 +1205,39 @@ function applyTheme(t){
 themeSel.addEventListener('change', () => applyTheme(themeSel.value));
 document.getElementById('colBtn').addEventListener('click', showCollection);
 updateColBtn();
+// back-up en herstel van de collectie (JSON-bestand), bereikbaar via het tandwiel
+document.getElementById('colExport').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(COL, null, 1)], {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'tcg-collectie.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+document.getElementById('colImport').addEventListener('click', () =>
+  document.getElementById('colFile').click());
+document.getElementById('colFile').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const data = JSON.parse(r.result);
+      if (!data || typeof data !== 'object' || Array.isArray(data))
+        throw new Error('dit is geen collectie-back-up');
+      const before = Object.keys(COL).length;
+      COL = {...COL, ...data};
+      colSave(); updateColBtn();
+      setStatus(`Back-up ingelezen: ${Object.keys(COL).length - before} kaart(en) toegevoegd — ` +
+                `${Object.keys(COL).length} in totaal.`);
+      if (COLVIEW){ COLVIEW = false; showCollection(); }   // open weergave verversen
+    } catch(err){
+      setStatus('<span class="err">Herstellen mislukt: ' + h(err.message) + '</span>');
+    }
+    e.target.value = '';
+  };
+  r.readAsText(f);
+});
 document.getElementById('reset').addEventListener('click', () => {
   document.getElementById('q').value = '';
   document.getElementById('mode').value = 'auto';
