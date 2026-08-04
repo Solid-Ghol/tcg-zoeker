@@ -463,10 +463,10 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
 
 <footer>
   Kaartgegevens en prijzen (Engels): <a href="https://pokemontcg.io" target="_blank" rel="noopener">Pokémon TCG API</a> —
-  marktprijzen van TCGplayer (USD) en Cardmarket (EUR).
+  marktprijzen van Cardmarket (EUR).
   Japanse kaarten: <a href="https://tcgdex.dev" target="_blank" rel="noopener">TCGdex</a>.
   Japanse naam via <a href="https://pokeapi.co" target="_blank" rel="noopener">PokéAPI</a>.
-  Voor graded prijzen (PSA 10 e.d.) staat bij elke kaart een link naar PriceCharting.
+  Ungraded- en graded-prijzen (PSA e.d.) zoek je per kaart op via PriceCharting.
   Prijzen zijn momentopnames en veranderen dagelijks.
   <br>Tip voor iPhone en iPad: tik in Safari op Deel → <b>Zet op beginscherm</b>; de zoeker opent
   daarna als een eigen app.
@@ -589,8 +589,6 @@ function mapPtcg(c, qLabel){
     // zodat óók kaarten zonder prijsblok direct op de juiste Cardmarket-pagina uitkomen
     cmUrl: (c.cardmarket && c.cardmarket.url) ||
            (c.id ? 'https://prices.pokemontcg.io/cardmarket/' + c.id : ''),
-    tpUrl: (c.tcgplayer && c.tcgplayer.url) ||
-           (c.id ? 'https://prices.pokemontcg.io/tcgplayer/' + c.id : ''),
   };
 }
 async function fetchEnglishPtcg(name, mode){
@@ -646,7 +644,7 @@ async function fetchTcgdex(name, lang, mode, jpTerm){
       supertype: '', subtypes: [], hp: '', attacks: [], weaknesses: [], resistances: [],
       retreat: null, artist: '', setLogo: '',
       img: c.image ? c.image + '/low.webp' : '', imgBig: c.image ? c.image + '/high.webp' : '',
-      usd: null, eur: null, cmLow: null, cmAvg30: null, cmUrl: '', tpUrl: '', _id: c.id,
+      usd: null, eur: null, cmLow: null, cmAvg30: null, cmUrl: '', _id: c.id,
     };
   });
   return out;
@@ -677,10 +675,8 @@ async function addTcgdexPrices(cards, lang, max = 60){
           c.cmLow = digPrice(cm, ['low','lowPrice','low1']);
           c.cmAvg30 = digPrice(cm, ['avg30','avg']);
           c.usd = digPrice(p.tcgplayer || {}, ['marketPrice','market','mid','directLow','lowPrice']);
-          // levert TCGdex een directe productlink mee, gebruik die dan voor de prijsknoppen
+          // levert TCGdex een directe Cardmarket-link mee, gebruik die dan voor de prijsknop
           if (!c.cmUrl && cm && typeof cm.url === 'string' && cm.url.startsWith('http')) c.cmUrl = cm.url;
-          const tp = p.tcgplayer || {};
-          if (!c.tpUrl && typeof tp.url === 'string' && tp.url.startsWith('http')) c.tpUrl = tp.url;
         }
       } catch(e){ /* prijs is optioneel */ }
     }));
@@ -836,10 +832,6 @@ function cmLink(c){
   return c.cmUrl || 'https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=' +
          encodeURIComponent(marketName(c));
 }
-function tpLink(c){
-  return c.tpUrl || 'https://www.tcgplayer.com/search/pokemon/product?productLineName=pokemon&q=' +
-         encodeURIComponent(marketName(c));
-}
 function cmTitle(c){
   const bits = [];
   if (c.cmLow != null) bits.push('laagste ' + money(c.cmLow,'EUR'));
@@ -875,7 +867,7 @@ function refreshColPrices(){
     const k = colKey(c);
     if (COL[k]){
       COL[k] = {...COL[k], eur: c.eur, usd: c.usd, cmLow: c.cmLow, cmAvg30: c.cmAvg30,
-                cmUrl: c.cmUrl || COL[k].cmUrl, tpUrl: c.tpUrl || COL[k].tpUrl,
+                cmUrl: c.cmUrl || COL[k].cmUrl,
                 img: c.img || COL[k].img, imgBig: c.imgBig || COL[k].imgBig};
       changed = true;
     }
@@ -973,11 +965,8 @@ function cardHTML(c){
       <div class="prices">
         <a class="pr main" href="${h(cmLink(c))}" target="_blank" rel="noopener"
            title="${h(cmTitle(c))}"><b>${money(c.eur,'EUR')}${trendArrow(c)}</b><span>Cardmarket ↗</span></a>
-        <a class="pr" href="${h(tpLink(c))}" target="_blank" rel="noopener"
-           title="Klik om op TCGplayer te openen"><b>${money(c.usd,'USD')}</b><span>TCGplayer ↗</span></a>
-      </div>
-      <div class="links">
-        <a href="${h(pcSearch(c))}" target="_blank" rel="noopener">PriceCharting (graded) ↗</a>
+        <a class="pr" href="${h(pcSearch(c))}" target="_blank" rel="noopener"
+           title="Ungraded- en graded-prijzen opzoeken bij PriceCharting"><b>ungraded</b><span>PriceCharting ↗</span></a>
       </div>
     </div></div>`;
 }
@@ -1023,15 +1012,13 @@ function openCard(i){
         <tr><th>Laagste aanbod</th><td><a href="${h(cmLink(c))}" target="_blank" rel="noopener">${eur(c.cmLow)}</a></td></tr>
         <tr><th>Gemiddelde 30 dagen</th><td><a href="${h(cmLink(c))}" target="_blank" rel="noopener">${eur(c.cmAvg30)}</a></td></tr>
       </table>
-      <h4>Overige prijzen</h4>
+      <h4>PriceCharting</h4>
       <table class="mtab">
-        <tr><th>TCGplayer market</th><td><a href="${h(tpLink(c))}" target="_blank" rel="noopener">${c.usd == null ? '—' : money(c.usd,'USD')}</a></td></tr>
-        <tr><th>Graded (PSA 10 e.d.)</th><td><a href="${h(pcSearch(c))}" target="_blank" rel="noopener">opzoeken bij PriceCharting ↗</a></td></tr>
+        <tr><th>Ungraded &amp; graded (PSA e.d.)</th><td><a href="${h(pcSearch(c))}" target="_blank" rel="noopener">prijzen opzoeken bij PriceCharting ↗</a></td></tr>
       </table>
       <div class="mlinks">
         <button class="btn" id="mcol">${ico('i-ball')}${colHas(c) ? '✓ In collectie' : '+ Bewaar in collectie'}</button>
         <a class="btn main" href="${h(cmLink(c))}" target="_blank" rel="noopener">${c.cmUrl ? 'Bekijk deze kaart op Cardmarket' : 'Zoek op Cardmarket'}</a>
-        ${c.tpUrl ? `<a class="btn" href="${h(c.tpUrl)}" target="_blank" rel="noopener">TCGplayer</a>` : ''}
         <a class="btn" href="${h(pcSearch(c))}" target="_blank" rel="noopener">PriceCharting</a>
         ${c.imgBig ? `<a class="btn" href="${h(c.imgBig)}" target="_blank" rel="noopener">Afbeelding</a>` : ''}
       </div>
@@ -1125,14 +1112,14 @@ function toCSV(){
   const head = ['Pokémon','Regio','Kaartnaam','Set','Serie','Nummer','Totaal','Rariteit','Type',
                 'Soort','HP','Illustrator',
                 'Uitgebracht','Cardmarket trend (EUR)','Cardmarket laagste (EUR)',
-                'Cardmarket gem. 30d (EUR)','TCGplayer market (USD)',
+                'Cardmarket gem. 30d (EUR)',
                 'Cardmarket-link','PriceCharting-link','Afbeelding'];
   const esc = v => '"' + String(v == null ? '' : v).replace(/"/g,'""') + '"';
   const lines = [head.map(esc).join(';')];
   CARDS.forEach(c => lines.push([c.q,c.region,c.name,c.set,c.setSeries,c.number,c.total,
     c.rarity,(c.types||[]).join(' '),
     c.supertype + ((c.subtypes||[]).length ? ' — ' + c.subtypes.join(', ') : ''),c.hp,c.artist,
-    c.date,c.eur,c.cmLow,c.cmAvg30,c.usd,
+    c.date,c.eur,c.cmLow,c.cmAvg30,
     cmLink(c),pcSearch(c),c.imgBig || c.img].map(esc).join(';')));
   const blob = new Blob(['﻿' + lines.join('\r\n')], {type:'text/csv;charset=utf-8'});
   const a = document.createElement('a');
