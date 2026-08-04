@@ -48,9 +48,11 @@ Dit bestand is voor Claude (en andere ontwikkelaars): huisregels die bij elke wi
   verkleind (canvas, ±1024px, JPEG) en als base64 naar een instelbaar endpoint gePOST
   (`photoEndpoint()` — standaard `/api/identify`, override via `localStorage` `tcgphoto` +
   het veld in `#settingspanel`). Het endpoint (`api/identify.js`, een Vercel-serverfunctie)
-  praat met een vision-model en kiest automatisch de provider op basis van de aanwezige
-  omgevingsvariabele: `GEMINI_API_KEY` (Google Gemini, GRATIS tier — voorkeur) óf
-  `ANTHROPIC_API_KEY` (Claude, betaald). De sleutel staat server-side, NOOIT in `index.html`.
+  praat met een vision-model en kiest automatisch de eerste provider waarvan een sleutel is
+  gezet (volgorde: `GROQ_API_KEY` = Groq/Llama, gratis — voorkeur → `GEMINI_API_KEY` = Google
+  Gemini, gratis maar niet in elke regio/account, geeft daar `quota limit: 0` → `ANTHROPIC_API_KEY`
+  = Claude, betaald). Model per provider instelbaar via `GROQ_MODEL`/`GEMINI_MODEL`/`ANTHROPIC_MODEL`.
+  De sleutel staat server-side, NOOIT in `index.html`.
   Antwoord = `{name, number, set}`;
   daarna wordt `#q` gevuld, `run()` uitgevoerd en de exacte kaart geopend
   (`revealPhotoMatch()`, matcht op kaartnummer + set). De site blijft een statisch bestand:

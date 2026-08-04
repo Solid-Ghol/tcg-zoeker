@@ -4,13 +4,17 @@
 // geeft het resultaat terug als { name, number, set }. De API-sleutel blijft hier op de
 // server (omgevingsvariabele) en komt nooit in de browserpagina terecht.
 //
-// Twee providers worden ondersteund; de functie kiest automatisch:
-//   1) GEMINI_API_KEY  -> Google Gemini (heeft een GRATIS tier — geen creditcard nodig).
-//   2) ANTHROPIC_API_KEY -> Anthropic Claude (betaald).
-// Zet in Vercel dus één van deze twee omgevingsvariabelen (Gemini is gratis).
+// Drie providers worden ondersteund; de functie kiest automatisch de eerste waarvan een
+// sleutel is ingesteld (in deze volgorde):
+//   1) GROQ_API_KEY    -> Groq (Llama vision) — GRATIS, geen creditcard nodig (aanbevolen).
+//   2) GEMINI_API_KEY  -> Google Gemini (gratis tier, maar niet in elke regio/account).
+//   3) ANTHROPIC_API_KEY -> Anthropic Claude (betaald).
+// Zet in Vercel dus één van deze omgevingsvariabelen.
 //
-// Optioneel: GEMINI_MODEL / ANTHROPIC_MODEL om een ander model te kiezen.
+// Optioneel: GROQ_MODEL / GEMINI_MODEL / ANTHROPIC_MODEL om een ander model te kiezen.
 
+const GROQ_KEY = process.env.GROQ_API_KEY;
+const GROQ_MODEL = process.env.GROQ_MODEL || 'meta-llama/llama-4-scout-17b-16e-instruct';
 const GEMINI_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
@@ -38,6 +42,33 @@ function extractJSON(text){
   const m = text.match(/\{[\s\S]*\}/);
   if (m){ try { return JSON.parse(m[0]); } catch(e){ /* geef op */ } }
   return null;
+}
+
+// --- Groq (Llama vision, gratis) — OpenAI-compatibel formaat ---
+async function askGroq(image, mediaType){
+  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'authorization': 'Bearer ' + GROQ_KEY, 'content-type': 'application/json' },
+    body: JSON.stringify({
+      model: GROQ_MODEL,
+      temperature: 0,
+      max_tokens: 400,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'text', text: PROMPT },
+          { type: 'image_url', image_url: { url: 'data:' + mediaType + ';base64,' + image } },
+        ],
+      }],
+    }),
+  });
+  const data = await r.json();
+  if (!r.ok){
+    const e = new Error((data && data.error && data.error.message) || ('Groq gaf status ' + r.status));
+    e.status = 502; throw e;
+  }
+  return (data.choices && data.choices[0] && data.choices[0].message &&
+          data.choices[0].message.content || '').trim();
 }
 
 // --- Google Gemini (gratis tier) ---
@@ -104,9 +135,9 @@ module.exports = async function handler(req, res){
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Gebruik POST met een foto.' });
 
-  if (!GEMINI_KEY && !ANTHROPIC_KEY) return res.status(500).json({
-    error: 'De server heeft geen sleutel. Zet in Vercel GEMINI_API_KEY (gratis via ' +
-      'aistudio.google.com) óf ANTHROPIC_API_KEY.' });
+  if (!GROQ_KEY && !GEMINI_KEY && !ANTHROPIC_KEY) return res.status(500).json({
+    error: 'De server heeft geen sleutel. Zet in Vercel GROQ_API_KEY (gratis via ' +
+      'console.groq.com), GEMINI_API_KEY óf ANTHROPIC_API_KEY.' });
 
   try {
     // req.body kan al geparsed zijn (Vercel) of nog een string; beide opvangen.
@@ -116,9 +147,10 @@ module.exports = async function handler(req, res){
     const mediaType = (body && body.media_type) || 'image/jpeg';
     if (!image) return res.status(400).json({ error: 'Geen afbeelding meegestuurd.' });
 
-    // Gratis provider heeft voorrang; anders de betaalde.
-    const text = GEMINI_KEY ? await askGemini(image, mediaType)
-                            : await askAnthropic(image, mediaType);
+    // Eerste beschikbare provider wint (Groq gratis > Gemini > Anthropic).
+    const text = GROQ_KEY ? await askGroq(image, mediaType)
+               : GEMINI_KEY ? await askGemini(image, mediaType)
+               : await askAnthropic(image, mediaType);
 
     const parsed = extractJSON(text);
     if (!parsed) return res.status(200).json({ name: '', number: '', set: '', confidence: 'low', raw: text });
