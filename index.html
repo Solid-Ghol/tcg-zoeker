@@ -437,6 +437,7 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
     <option value="date_desc">Nieuwste eerst</option>
     <option value="number">Kaartnummer</option>
     <option value="price">Prijs hoog → laag</option>
+    <option value="price_asc">Prijs laag → hoog</option>
     <option value="name">Naam (A–Z)</option>
   </select>
   <button id="csv" disabled><svg class="ico" aria-hidden="true"><use href="#i-dl"/></svg>CSV</button>
@@ -1073,6 +1074,9 @@ function render(){
   if (sort === 'number') list.sort((a,b) => (a.set||'').localeCompare(b.set||'') ||
     (numval(a.number) - numval(b.number)) || String(a.number).localeCompare(String(b.number)));
   if (sort === 'price') list.sort((a,b) => price(b) - price(a));
+  // oplopend: kaarten zonder prijs achteraan houden in plaats van vooraan
+  const priceAsc = c => (price(c) < 0 ? Number.MAX_VALUE : price(c));
+  if (sort === 'price_asc') list.sort((a,b) => priceAsc(a) - priceAsc(b));
   if (sort === 'name') list.sort((a,b) => a.name.localeCompare(b.name) || (a.set||'').localeCompare(b.set||''));
   document.getElementById('count').textContent = list.length + ' van ' + CARDS.length + ' kaarten';
   requestAnimationFrame(updateScrollHint);   // filterbalk kan van breedte veranderd zijn
