@@ -817,6 +817,7 @@ function finishRun(asSet, notes){
       failed ? 15000 : 8000);
   }
   render();
+  tryOpenPhotoMatch();   // foto-scan: exacte kaart openen (ook bij een cache-treffer)
   if (CARDS.length && window.matchMedia('(max-width:640px)').matches){
     document.getElementById('controls').scrollIntoView({behavior:'smooth', block:'start'});
   }
@@ -1465,6 +1466,7 @@ function tryOpenPhotoMatch(){
 // Na afloop van de zoekactie: is de kaart nog niet geopend (geen exacte match), meld dat kort.
 function finalizePhotoMatch(){
   if (!PHOTO_MATCH) return;   // al geopend via tryOpenPhotoMatch
+  if (tryOpenPhotoMatch()) return;   // alsnog openen als de kaart tussen de resultaten staat
   const { name, number, set } = PHOTO_MATCH;
   PHOTO_MATCH = null;
   const info = 'Herkend: <b>' + h(name) + '</b>' +
