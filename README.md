@@ -138,16 +138,21 @@ geeft dan een nette melding.
 
 ### Kies een vision-model (gratis kan!)
 
-De serverfunctie werkt met drie aanbieders en kiest automatisch de eerste waarvan je een sleutel
-instelt (volgorde: Groq → Gemini → Anthropic):
+De serverfunctie werkt met vier aanbieders en kiest automatisch de eerste waarvan je een sleutel
+instelt (volgorde: OpenRouter → Groq → Gemini → Anthropic):
 
-- **Groq — gratis (aanbevolen).** Een gratis vision-model (Llama), **zonder creditcard**. Haal een
-  sleutel op via [console.groq.com](https://console.groq.com/) (*API Keys → Create*). Zet in Vercel
-  de variabele `GROQ_API_KEY`. Optioneel `GROQ_MODEL` voor een ander model.
+- **OpenRouter — gratis (aanbevolen).** Bundelt meerdere gratis vision-modellen, **zonder
+  creditcard**, en werkt in de EU. Haal een sleutel op via
+  [openrouter.ai/keys](https://openrouter.ai/keys). Zet in Vercel de variabele `OPENROUTER_API_KEY`;
+  de functie kiest zelf een gratis vision-model (optioneel forceer je er één met `OPENROUTER_MODEL`,
+  bijv. `qwen/qwen2.5-vl-72b-instruct:free`).
+- **Groq — gratis, maar niet elk account heeft een vision-model.** Sleutel via
+  [console.groq.com](https://console.groq.com/). Variabele: `GROQ_API_KEY` (model wordt automatisch
+  gekozen, of forceer met `GROQ_MODEL`).
 - **Google Gemini — gratis, maar niet overal.** Sleutel via
   [aistudio.google.com](https://aistudio.google.com/). Let op: de gratis tier is niet in elke regio
-  of bij elk (bedrijfs)account beschikbaar — krijg je `quota … limit: 0`, gebruik dan Groq. Variabele:
-  `GEMINI_API_KEY`.
+  of bij elk (bedrijfs)account beschikbaar — krijg je `quota … limit: 0`, gebruik dan OpenRouter.
+  Variabele: `GEMINI_API_KEY`.
 - **Anthropic Claude — betaald.** Sleutel via [console.anthropic.com](https://console.anthropic.com/);
   je zet er zelf een klein tegoed op. Variabele: `ANTHROPIC_API_KEY`.
 
@@ -164,9 +169,10 @@ het camera-icoon meteen — je hoeft in de zoeker niets in te stellen.
 2. Log in op [vercel.com](https://vercel.com/) met je GitHub-account en klik **Add New… → Project**.
 3. Kies je `tcg-zoeker`-repository en klik **Import**. Framework: **Other** (geen build nodig).
 4. Vouw **Environment Variables** open en voeg één sleutel toe:
-   - Gratis (aanbevolen): **Name** `GROQ_API_KEY` — **Value** je Groq-sleutel. *(optioneel `GROQ_MODEL`)*
-   - Of gratis: **Name** `GEMINI_API_KEY` — **Value** je Gemini-sleutel. *(optioneel `GEMINI_MODEL`)*
-   - Of betaald: **Name** `ANTHROPIC_API_KEY` — **Value** je Anthropic-sleutel. *(optioneel `ANTHROPIC_MODEL`)*
+   - Gratis (aanbevolen): **Name** `OPENROUTER_API_KEY` — **Value** je OpenRouter-sleutel.
+   - Of gratis: **Name** `GROQ_API_KEY` — **Value** je Groq-sleutel.
+   - Of gratis: **Name** `GEMINI_API_KEY` — **Value** je Gemini-sleutel.
+   - Of betaald: **Name** `ANTHROPIC_API_KEY` — **Value** je Anthropic-sleutel.
 5. Klik **Deploy**. Na een halve minuut krijg je een adres zoals
    `https://tcg-zoeker.vercel.app` — open dat en het camera-icoon werkt.
 
@@ -184,9 +190,9 @@ serverfunctie op Vercel:
 ### Wat er met je foto gebeurt
 
 De foto wordt in de browser verkleind en één keer naar je eigen serverfunctie gestuurd, die hem
-aan het gekozen vision-model (Groq, Gemini of Claude) doorgeeft om de kaart af te lezen. Er wordt
-niets van de foto bewaard. Alleen jij gebruikt je eigen sleutel; bij Groq en Gemini blijf je binnen
-de gratis tier, bij Anthropic betaal je je eigen (zeer kleine) verbruik.
+aan het gekozen vision-model (OpenRouter, Groq, Gemini of Claude) doorgeeft om de kaart af te lezen.
+Er wordt niets van de foto bewaard. Alleen jij gebruikt je eigen sleutel; bij OpenRouter, Groq en
+Gemini blijf je binnen de gratis tier, bij Anthropic betaal je je eigen (zeer kleine) verbruik.
 
 ## Privacy en kosten
 

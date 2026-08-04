@@ -49,9 +49,12 @@ Dit bestand is voor Claude (en andere ontwikkelaars): huisregels die bij elke wi
   (`photoEndpoint()` — standaard `/api/identify`, override via `localStorage` `tcgphoto` +
   het veld in `#settingspanel`). Het endpoint (`api/identify.js`, een Vercel-serverfunctie)
   praat met een vision-model en kiest automatisch de eerste provider waarvan een sleutel is
-  gezet (volgorde: `GROQ_API_KEY` = Groq/Llama, gratis — voorkeur → `GEMINI_API_KEY` = Google
-  Gemini, gratis maar niet in elke regio/account, geeft daar `quota limit: 0` → `ANTHROPIC_API_KEY`
-  = Claude, betaald). Model per provider instelbaar via `GROQ_MODEL`/`GEMINI_MODEL`/`ANTHROPIC_MODEL`.
+  gezet (volgorde: `OPENROUTER_API_KEY` = OpenRouter, gratis vision-modellen — voorkeur →
+  `GROQ_API_KEY` = Groq/Llama (niet elk account heeft vision) → `GEMINI_API_KEY` = Google Gemini
+  (gratis maar niet in elke regio/account, geeft daar `quota limit: 0`) → `ANTHROPIC_API_KEY` =
+  Claude, betaald). Bij OpenRouter en Groq zoekt de functie zélf een gratis/beschikbaar vision-model
+  op via hun `/models`-endpoint (met terugval op een volgend model), zodat gewisselde modelnamen
+  niet stuklopen; forceren kan met `OPENROUTER_MODEL`/`GROQ_MODEL`/`GEMINI_MODEL`/`ANTHROPIC_MODEL`.
   De sleutel staat server-side, NOOIT in `index.html`.
   Antwoord = `{name, number, set}`;
   daarna wordt `#q` gevuld, `run()` uitgevoerd en de exacte kaart geopend
