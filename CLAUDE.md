@@ -25,11 +25,15 @@ Dit bestand is voor Claude (en andere ontwikkelaars): huisregels die bij elke wi
   keuze staat in `localStorage` (`tcgtheme`) en wordt vóór het schilderen gezet (inline script
   in `<head>`). Nieuwe kleuren altijd als variabele toevoegen, nooit hardcoded in componenten.
 - **Zoeken is één ding**: één zoekbalk (naam of setnaam, automatisch bepaald; EN via
-  pokemontcg.io met TCGdex-terugval, JP via PokéAPI + TCGdex). GEEN aparte
-  "geavanceerd zoeken"-modus toevoegen — dat is eerder geprobeerd en als verwarrend
-  weggehaald. Alles ná het zoeken gebeurt in de balk "Filter:" (tekst, rariteit, type,
-  soort, taal) plus de weergaveknoppen (per Pokémon / per set / alles) — knoppen,
+  pokemontcg.io met TCGdex-terugval, JP via PokéAPI + TCGdex). Er wordt ALTIJD in beide
+  talen gezocht — geen taalvinkjes bij het zoeken; taal beperken gebeurt in de filterbalk.
+  GEEN aparte "geavanceerd zoeken"-modus toevoegen — dat is eerder geprobeerd en als
+  verwarrend weggehaald. Alles ná het zoeken gebeurt in de balk "Filter:" (tekst, rariteit,
+  type, soort, taal) plus de weergaveknoppen (per Pokémon / per set / alles) — knoppen,
   geen dropdown, dat is een expliciete wens.
+- **Status is alleen voor problemen.** Een geslaagde zoekactie krijgt géén verslagregel
+  ("X kaarten gevonden — bron: …"); de statusbalk toont alleen fouten en waarschuwingen
+  (en de collectie-informatie). Ook een expliciete wens.
 - **Instellingen** (thema, bron) staan achter het tandwiel rechtsboven
   (`#settingspanel`); nieuwe instellingen horen dáár, niet los in de zoekbalk.
 - **Collectie**: `localStorage` (`tcgcol`), sleutel via `colKey()` (regio + kaart-id).
