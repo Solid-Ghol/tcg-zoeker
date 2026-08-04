@@ -1,0 +1,51 @@
+# Afspraken voor dit project (Pokémon TCG-zoeker)
+
+Dit bestand is voor Claude (en andere ontwikkelaars): huisregels die bij elke wijziging gelden.
+
+## Harde eisen
+
+- **Geen emoji als UI-iconen.** Knoppen, chips en menu's gebruiken uitsluitend de inline
+  SVG-sprite bovenaan `<body>` in `index.html` (symbolen `i-ball`, `i-ballfill`, `i-lens`,
+  `i-cards`, `i-help`, `i-share`, `i-x`, `i-dl`, `i-gear`, `i-sliders`, …). Nieuw icoon nodig?
+  Teken het als `<symbol>` in dezelfde stijl: 24×24 viewBox, `stroke="currentColor"`,
+  `stroke-width="2"`, ronde uiteinden — dan kleurt het mee met tekst en thema.
+  Typografische tekens (✓, ‹, ›, ▲, ▼) mogen wel; kleuren-emoji (📚 ⭐ 🔗 …) niet.
+- **Mobiel-eerst.** De zoeker moet prettig werken op een telefoon: duimbare knoppen,
+  16px-invoervelden (anders zoomt iOS-Safari in), `env(safe-area-inset-*)` respecteren.
+  Test elke wijziging ook op een smal scherm (±390px).
+- **Alles in één `index.html`.** Geen build, geen dependencies, geen externe assets —
+  de site draait op GitHub Pages en praat rechtstreeks met open API's vanuit de browser.
+- **Escape dynamische tekst.** Alles wat uit een API of invoerveld komt gaat door `h(...)`
+  voordat het in HTML belandt.
+- **Nederlands.** Alle zichtbare teksten (en bij voorkeur codecommentaar) in het Nederlands.
+
+## Structuur en patronen
+
+- **Thema's**: CSS-variabelen per `data-theme` op `<html>` (auto/dark/light/sunset/jeroen);
+  keuze staat in `localStorage` (`tcgtheme`) en wordt vóór het schilderen gezet (inline script
+  in `<head>`). Nieuwe kleuren altijd als variabele toevoegen, nooit hardcoded in componenten.
+- **Zoeken**: twee tabbladen — "Zoeken" (naam/set, EN via pokemontcg.io met TCGdex-terugval,
+  JP via PokéAPI + TCGdex) en "Op kenmerken" (rechtstreekse database-query, alleen EN).
+  De balk "Filter resultaten" filtert alleen binnen de al opgehaalde lijst — dat onderscheid
+  bewust zo houden en benoemen.
+- **Instellingen** (thema, zoekmodus, bron) staan achter het tandwiel rechtsboven
+  (`#settingspanel`); nieuwe instellingen horen dáár, niet los in de zoekbalk.
+- **Collectie**: `localStorage` (`tcgcol`), sleutel via `colKey()` (regio + kaart-id).
+  Prijzen in de collectie worden ververst zodra dezelfde kaart opnieuw wordt opgehaald
+  (`refreshColPrices()`).
+- **Deelbare links**: `?q=`/`?mode=`/`?en=`/`?jp=` voor gewoon zoeken, `?aq=` voor een
+  kenmerken-query; bij het laden wordt zo'n link automatisch uitgevoerd.
+
+## Testen
+
+- Echte API's zijn vanuit de ontwikkelsandbox vaak geblokkeerd (403). Test de flow met
+  Playwright + `page.route()`-mocks voor `api.pokemontcg.io`, `api.tcgdex.net`, `pokeapi.co`
+  en de afbeeldingshosts; Chromium staat op `/opt/pw-browsers/chromium-*/chrome-linux/chrome`.
+- Controleer minstens: dark + light, desktop + 390px, en de consolefoutenlog.
+
+## Bekende valkuilen
+
+- pokemontcg.io geeft geregeld 500 bij heel brede queries ("bevat"-wildcards, alleen een
+  supertype); toon dan de gebruikte query en probeer een lichtere variant.
+- TCGdex-prijzen zitten in het detail-endpoint per kaart — vergeet `addTcgdexPrices()` niet
+  voor elke TCGdex-lijst (ook Japans!).
