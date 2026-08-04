@@ -32,8 +32,11 @@ Dit bestand is voor Claude (en andere ontwikkelaars): huisregels die bij elke wi
   type, soort, taal) plus de weergaveknoppen (per Pokémon / per set / alles) — knoppen,
   geen dropdown, dat is een expliciete wens.
 - **Status is alleen voor problemen.** Een geslaagde zoekactie krijgt géén verslagregel
-  ("X kaarten gevonden — bron: …"); de statusbalk toont alleen fouten en waarschuwingen
-  (en de collectie-informatie). Ook een expliciete wens.
+  ("X kaarten gevonden — bron: …"). Waarschuwingen en fouten verschijnen als zwevende,
+  sluitbare toast (`toast()`, verdwijnt vanzelf); de vaste statusbalk is er alleen voor
+  de laad-indicator en de collectieweergave. Ook een expliciete wens.
+- **Horizontaal scrollbare balken** krijgen een zichtbare hint (vervaging + ›-pijltje via
+  `.controls.more::after` en `updateScrollHint()`); niets stilletjes laten afkappen.
 - **Instellingen** (thema, bron) staan achter het tandwiel rechtsboven
   (`#settingspanel`); nieuwe instellingen horen dáár, niet los in de zoekbalk.
 - **Collectie**: `localStorage` (`tcgcol`), sleutel via `colKey()` (regio + kaart-id).

@@ -150,8 +150,15 @@ h2 img.setlogo{height:26px;width:auto;vertical-align:middle}
 .status.on{display:block}
 .status .err{color:var(--red)}
 .controls{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line);
-  padding:10px 24px;display:none;gap:10px;flex-wrap:wrap;align-items:center}
-.controls.on{display:flex}
+  padding:10px 24px;display:none}
+.controls.on{display:block}
+.cscroll{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+/* hint dat de filterbalk verder scrollt: vervaging + pijltje aan de rechterrand */
+.controls::after{content:"›";position:absolute;right:0;top:0;bottom:0;width:46px;
+  display:none;align-items:center;justify-content:flex-end;padding-right:8px;
+  color:var(--dim);font-size:19px;font-weight:600;pointer-events:none;
+  background:linear-gradient(90deg,transparent,var(--panel) 72%)}
+.controls.more::after{display:flex}
 .count{color:var(--dim);font-size:13px;margin-left:auto}
 .flabel{color:var(--dim);font-size:12.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
 main{padding:20px 24px 60px}
@@ -253,9 +260,9 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
   .settings{position:static;width:100%;margin-top:10px}
   .hbtns{gap:6px}
   /* filterbalk: één horizontaal veegbare regel in plaats van een hoge stapel */
-  .controls{flex-wrap:nowrap;overflow-x:auto;gap:6px;-webkit-overflow-scrolling:touch;
+  .cscroll{flex-wrap:nowrap;overflow-x:auto;gap:6px;-webkit-overflow-scrolling:touch;
     scrollbar-width:none}
-  .controls::-webkit-scrollbar{display:none}
+  .cscroll::-webkit-scrollbar{display:none}
   .controls .flabel{display:none}
   .controls input{flex:0 0 150px;min-width:150px}
   .controls select,.controls button{flex:0 0 auto;width:auto}
@@ -286,6 +293,15 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
   .mtab th{padding-right:12px}
   .mlinks .btn{flex:1 1 calc(50% - 4px);text-align:center}
 }
+/* zwevende melding (toast): verdwijnt vanzelf en is te sluiten */
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));z-index:70;
+  transform:translateX(-50%) translateY(14px);max-width:min(92vw,560px);
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);
+  padding:10px 12px;display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.5;
+  opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease}
+.toast.on{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0)}
+.toast .err{color:var(--red)}
+.toast .iconbtn{padding:4px;flex:0 0 auto}
 .spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--line);
   border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px}
 @keyframes sp{to{transform:rotate(360deg)}}
@@ -387,6 +403,7 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
 <div class="status" id="status"></div>
 
 <div class="controls" id="controls">
+  <div class="cscroll" id="cscroll">
   <span class="flabel"><svg class="ico s" aria-hidden="true"><use href="#i-sliders"/></svg>Filter:</span>
   <input type="search" id="filter" placeholder="Zoek in de resultaten…">
   <select id="rar" title="Filter op rariteit">
@@ -421,6 +438,7 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
   <button id="csv" disabled><svg class="ico" aria-hidden="true"><use href="#i-dl"/></svg>CSV</button>
   <button id="share" title="Kopieer een deelbare link naar deze zoekopdracht"><svg class="ico" aria-hidden="true"><use href="#i-share"/></svg>Deel</button>
   <span class="count" id="count"></span>
+  </div>
 </div>
 
 <main id="out"><p class="empty">Nog niets opgehaald — typ hierboven een Pokémon en klik op Zoeken.</p></main>
@@ -432,6 +450,11 @@ footer{padding:22px 24px;border-top:1px solid var(--line);color:var(--dim);font-
     <button class="nav next" id="modalNext" title="Volgende (→)" aria-label="Volgende kaart">›</button>
     <div id="modalBody"></div>
   </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <span id="toastMsg"></span>
+  <button class="iconbtn" id="toastClose" title="Sluiten" aria-label="Melding sluiten"><svg class="ico" style="margin:0" aria-hidden="true"><use href="#i-x"/></svg></button>
 </div>
 
 <footer>
@@ -452,6 +475,15 @@ let CARDS = [], VIEW = [], MODAL_I = -1;
 const setsCache = {};
 
 function setStatus(html){ S.className = 'status on'; S.innerHTML = html; }
+// Kleine zwevende melding die vanzelf verdwijnt (en met het kruisje te sluiten is).
+let toastTimer = null;
+function toast(html, ms = 8000){
+  document.getElementById('toastMsg').innerHTML = html;
+  document.getElementById('toast').classList.add('on');
+  clearTimeout(toastTimer);
+  if (ms) toastTimer = setTimeout(hideToast, ms);
+}
+function hideToast(){ document.getElementById('toast').classList.remove('on'); }
 // Escapet tekst die uit de API of uit de zoekbalk komt, zodat een naam met < & " de
 // opmaak niet breekt. Werkt zowel binnen tekst als binnen een dubbel-aangehaald attribuut.
 function h(v){
@@ -750,12 +782,12 @@ async function run(){
     document.getElementById('sort').value = 'number';
   }
   const failed = notes.some(n => n.includes('class="err"'));
+  S.className = 'status'; S.innerHTML = '';   // de vaste balk is alleen voor de collectie
   if (notes.length){
-    setStatus(notes.join(' · ') + (failed
+    toast(notes.join('<br>') + (failed
       ? '<br><span class="err">Lukt het ophalen niet? Controleer de internetverbinding — sommige ' +
-        'bedrijfsnetwerken of VPN\'s blokkeren deze open API\'s.</span>' : ''));
-  } else {
-    S.className = 'status'; S.innerHTML = '';
+        'bedrijfsnetwerken of VPN\'s blokkeren deze open API\'s.</span>' : ''),
+      failed ? 15000 : 8000);
   }
   render();
   if (CARDS.length && window.matchMedia('(max-width:640px)').matches){
@@ -837,7 +869,7 @@ function showCollection(){
   if (COLVIEW) return exitCollection();
   const items = Object.values(COL);
   if (!items.length){
-    setStatus('Je collectie is nog leeg — klik bij een kaart op <b>+ Collectie</b> om hem te bewaren.');
+    toast('Je collectie is nog leeg — klik bij een kaart op <b>+ Collectie</b> om hem te bewaren.');
     return;
   }
   SAVEDVIEW = { cards: CARDS, status: S.innerHTML, statusOn: S.className,
@@ -1027,6 +1059,7 @@ function render(){
   if (sort === 'price') list.sort((a,b) => price(b) - price(a));
   if (sort === 'name') list.sort((a,b) => a.name.localeCompare(b.name) || (a.set||'').localeCompare(b.set||''));
   document.getElementById('count').textContent = list.length + ' van ' + CARDS.length + ' kaarten';
+  requestAnimationFrame(updateScrollHint);   // filterbalk kan van breedte veranderd zijn
   VIEW = list;
   list.forEach((c, i) => { c._v = i; });
   if (!list.length){ OUT.innerHTML = '<p class="empty">Geen kaarten gevonden.</p>'; return; }
@@ -1170,6 +1203,17 @@ document.getElementById('setbrowser').addEventListener('click', e => {
 // setnamen alvast ophalen voor de autocomplete zodra het zoekveld voor het eerst focus krijgt
 document.getElementById('q').addEventListener('focus', () => loadAllSets().catch(() => {}), {once:true});
 
+// scroll-hint op de filterbalk: pijltje tonen zolang er rechts meer te vegen valt
+const CSCROLL = document.getElementById('cscroll');
+function updateScrollHint(){
+  const more = CSCROLL.scrollWidth > CSCROLL.clientWidth + 4 &&
+               CSCROLL.scrollLeft + CSCROLL.clientWidth < CSCROLL.scrollWidth - 8;
+  document.getElementById('controls').classList.toggle('more', more);
+}
+CSCROLL.addEventListener('scroll', updateScrollHint, {passive: true});
+window.addEventListener('resize', updateScrollHint);
+document.getElementById('toastClose').addEventListener('click', hideToast);
+
 // weergaveknoppen, instellingen (tandwiel) en uitleg
 document.querySelectorAll('#controls .stab').forEach(b =>
   b.addEventListener('click', () => { setView(b.dataset.grp); render(); }));
@@ -1212,11 +1256,11 @@ document.getElementById('colFile').addEventListener('change', e => {
       const before = Object.keys(COL).length;
       COL = {...COL, ...data};
       colSave(); updateColBtn();
-      setStatus(`Back-up ingelezen: ${Object.keys(COL).length - before} kaart(en) toegevoegd — ` +
-                `${Object.keys(COL).length} in totaal.`);
+      toast(`Back-up ingelezen: ${Object.keys(COL).length - before} kaart(en) toegevoegd — ` +
+            `${Object.keys(COL).length} in totaal.`);
       if (COLVIEW){ COLVIEW = false; showCollection(); }   // open weergave verversen
     } catch(err){
-      setStatus('<span class="err">Herstellen mislukt: ' + h(err.message) + '</span>');
+      toast('<span class="err">Herstellen mislukt: ' + h(err.message) + '</span>', 12000);
     }
     e.target.value = '';
   };
