@@ -28,14 +28,15 @@ Dit bestand is voor Claude (en andere ontwikkelaars): huisregels die bij elke wi
 
 ## Structuur en patronen
 
-- **Ontwerp = rode "POKÉDEX"-look** (Claude Design, mobiel-eerst, responsief). Warme
+- **Ontwerp = rode Pokédex-look** (Claude Design, mobiel-eerst, responsief). Warme
   crème-achtergrond met knalrood accent (`--header`/`--accent` = Pokédex-rood), dikke
-  inktranden, rode Pokédex-koptekst met pixel-Pokéball + statuslampjes en een pixel-wordmark
-  "POKÉDEX" (font Press Start 2P). Per Pokémon een kopregel-kaart (`.pokehead`) met
-  soort-omschrijving, type-badge, sprite en nationaal dexnummer; op de tegels een klein
-  dexnummer-badge (`.dexno`). Onderbalk (tabbar: Zoeken/Collectie/Prijzen) op mobiel — op
-  desktop staat Collectie in de header en verdwijnt de tabbar. Fonts **Caprasimo** (koppen)
-  + **Figtree** (tekst) + **Press Start 2P** (pixel-wordmark/dexnummers) staan **base64
+  inktranden, rode koptekst met pixel-Pokéball + statuslampjes en de wordmark
+  **"TCG-Finder"** (font Caprasimo — de merknaam blijft TCG-Finder, NIET "POKÉDEX"). Per
+  Pokémon een gewone kopregel (`.pokeh2`) met alleen de **sprite** naast de naam — géén grote
+  info-balk met omschrijving/type/dexnummer (bewust weggehaald). Op de tegels wél een klein
+  dexnummer-badge (`.dexno`, pixel-font). Onderbalk (tabbar: Zoeken/Collectie/Prijzen) op
+  mobiel — op desktop staat Collectie in de header en verdwijnt de tabbar. Fonts **Caprasimo**
+  (koppen) + **Figtree** (tekst) + **Press Start 2P** (pixel-dexnummers) staan **base64
   ingebouwd** bovenaan het `<style>`-blok (NIET verwijderen; houdt het bestand zelfstandig
   en offline-proof — geen externe font-requests).
 - **Thema's**: CSS-variabelen per `data-theme` op `<html>` (`amber` = standaard = het rode
