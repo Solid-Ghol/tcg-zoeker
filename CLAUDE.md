@@ -28,16 +28,25 @@ Dit bestand is voor Claude (en andere ontwikkelaars): huisregels die bij elke wi
 
 ## Structuur en patronen
 
-- **Ontwerp = "2a" amber Pokédex-look** (Claude Design, mobiel-eerst, responsief). Warme
-  aardetinten met oranje accent, dikke inktranden, Pokédex-koptekst (lens + statuslampjes),
-  onderbalk (tabbar: Zoeken/Collectie/Prijzen) op mobiel — op desktop staat Collectie in de
-  header en verdwijnt de tabbar. Fonts **Caprasimo** (koppen) + **Figtree** (tekst) staan
-  **base64 ingebouwd** bovenaan het `<style>`-blok (NIET verwijderen; houdt het bestand
-  zelfstandig en offline-proof — geen externe font-requests).
-- **Thema's**: CSS-variabelen per `data-theme` op `<html>` (`amber` = standaard / `dark` /
-  `auto` = systeem); keuze staat in `localStorage` (`tcgtheme`) en wordt vóór het schilderen
-  gezet (inline script in `<head>`, valt bij een onbekende waarde terug op `amber`). Nieuwe
-  kleuren altijd als variabele toevoegen, nooit hardcoded in componenten.
+- **Ontwerp = rode "POKÉDEX"-look** (Claude Design, mobiel-eerst, responsief). Warme
+  crème-achtergrond met knalrood accent (`--header`/`--accent` = Pokédex-rood), dikke
+  inktranden, rode Pokédex-koptekst met pixel-Pokéball + statuslampjes en een pixel-wordmark
+  "POKÉDEX" (font Press Start 2P). Per Pokémon een kopregel-kaart (`.pokehead`) met
+  soort-omschrijving, type-badge, sprite en nationaal dexnummer; op de tegels een klein
+  dexnummer-badge (`.dexno`). Onderbalk (tabbar: Zoeken/Collectie/Prijzen) op mobiel — op
+  desktop staat Collectie in de header en verdwijnt de tabbar. Fonts **Caprasimo** (koppen)
+  + **Figtree** (tekst) + **Press Start 2P** (pixel-wordmark/dexnummers) staan **base64
+  ingebouwd** bovenaan het `<style>`-blok (NIET verwijderen; houdt het bestand zelfstandig
+  en offline-proof — geen externe font-requests).
+- **Thema's**: CSS-variabelen per `data-theme` op `<html>` (`amber` = standaard = het rode
+  Pokédex-thema, sleutelnaam historisch / `dark` / `auto` = systeem); keuze staat in
+  `localStorage` (`tcgtheme`) en wordt vóór het schilderen gezet (inline script in `<head>`,
+  valt bij een onbekende waarde terug op `amber`). Nieuwe kleuren altijd als variabele
+  toevoegen, nooit hardcoded in componenten.
+- **Soort-info (Pokédex)**: per Pokémon halen we omschrijving + sprite + dexnummer bij
+  PokéAPI (`loadSpecies()`, cache `SPECIES`, ook negatief zodat Trainer-/Energy-kaarten maar
+  één keer 404'en). `hydrateSpecies()` vult ná `render()` de kopregels en tegel-dexnummers;
+  sprites komen rechtstreeks van de PokéAPI-sprite-repo (afbeelding, dus buiten de proxy om).
 - **Zoeken is één ding**: één zoekbalk (naam of setnaam, automatisch bepaald; EN via
   pokemontcg.io met TCGdex-terugval, JP via PokéAPI + TCGdex). Er wordt ALTIJD in beide
   talen gezocht — geen taalvinkjes bij het zoeken; taal beperken gebeurt in de filterbalk.
