@@ -28,9 +28,16 @@ Dit bestand is voor Claude (en andere ontwikkelaars): huisregels die bij elke wi
 
 ## Structuur en patronen
 
-- **Thema's**: CSS-variabelen per `data-theme` op `<html>` (auto/dark/light/sunset/jeroen);
-  keuze staat in `localStorage` (`tcgtheme`) en wordt vóór het schilderen gezet (inline script
-  in `<head>`). Nieuwe kleuren altijd als variabele toevoegen, nooit hardcoded in componenten.
+- **Ontwerp = "2a" amber Pokédex-look** (Claude Design, mobiel-eerst, responsief). Warme
+  aardetinten met oranje accent, dikke inktranden, Pokédex-koptekst (lens + statuslampjes),
+  onderbalk (tabbar: Zoeken/Collectie/Prijzen) op mobiel — op desktop staat Collectie in de
+  header en verdwijnt de tabbar. Fonts **Caprasimo** (koppen) + **Figtree** (tekst) staan
+  **base64 ingebouwd** bovenaan het `<style>`-blok (NIET verwijderen; houdt het bestand
+  zelfstandig en offline-proof — geen externe font-requests).
+- **Thema's**: CSS-variabelen per `data-theme` op `<html>` (`amber` = standaard / `dark` /
+  `auto` = systeem); keuze staat in `localStorage` (`tcgtheme`) en wordt vóór het schilderen
+  gezet (inline script in `<head>`, valt bij een onbekende waarde terug op `amber`). Nieuwe
+  kleuren altijd als variabele toevoegen, nooit hardcoded in componenten.
 - **Zoeken is één ding**: één zoekbalk (naam of setnaam, automatisch bepaald; EN via
   pokemontcg.io met TCGdex-terugval, JP via PokéAPI + TCGdex). Er wordt ALTIJD in beide
   talen gezocht — geen taalvinkjes bij het zoeken; taal beperken gebeurt in de filterbalk.
