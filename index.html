@@ -115,7 +115,7 @@ header{background:linear-gradient(180deg,var(--header),var(--header2));color:var
 .dexdots i{width:11px;height:11px;border-radius:50%;border:2px solid var(--ink);display:block}
 .dexdots i:nth-child(1){background:#57c2e8}.dexdots i:nth-child(2){background:#f0d24b}.dexdots i:nth-child(3){background:#7fce6a}
 h1{margin:0;color:var(--on-header);flex:1;line-height:1;display:flex;align-items:center;gap:11px}
-.wordmark{font-family:var(--font-pixel);font-size:19px;letter-spacing:.02em;
+.wordmark{font-family:var(--font-display);font-size:26px;letter-spacing:.01em;
   text-shadow:2px 2px 0 var(--header-line)}
 .ball{display:none}
 .hbtns{display:flex;gap:8px;align-items:center;margin-left:auto}
@@ -191,22 +191,10 @@ h2{font-size:20px;margin:22px 0 12px;display:flex;align-items:baseline;gap:10px;
   padding-bottom:6px;border-bottom:var(--bw) solid var(--line-soft)}
 h2 small{color:var(--dim);font-size:13px;font-family:var(--font-body);font-weight:600}
 h2 img.setlogo{height:26px;width:auto;vertical-align:middle}
-/* ---------- Pokédex-kopregel per Pokémon (omschrijving + sprite + dexnummer) ---------- */
-.pokehead{display:flex;align-items:flex-start;gap:14px;margin:26px 0 12px;padding:12px 14px;
-  background:var(--surface);border:var(--bw) solid var(--line);border-radius:var(--radius);
-  box-shadow:var(--shadow)}
-.pokehead .phinfo{flex:1;min-width:0}
-.pokehead h2{margin:0;border:0;padding:0;font-size:22px}
-.pokehead .phtop{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-.pokehead .pdex{font-family:var(--font-pixel);font-size:12px;color:var(--accent);letter-spacing:.02em}
-.pokehead .pdex:empty{display:none}
-.pokehead .phtags{margin:6px 0 0}
-.pokehead .pflavor{margin:7px 0 0;color:var(--dim);font-size:13.5px;line-height:1.5}
-.pokehead .pflavor:empty{display:none}
-.pokehead .psprite{width:72px;height:72px;flex:0 0 auto;object-fit:contain;image-rendering:pixelated;
-  align-self:center;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))}
-.pokehead.nospec{display:block}   /* geen soort gevonden: gewone kopregel */
-.pokehead.nospec .psprite,.pokehead.nospec .pflavor,.pokehead.nospec .pdex,.pokehead.nospec .phtags{display:none}
+/* ---------- kopregel per Pokémon: sprite naast de naam ---------- */
+.pokeh2{align-items:center}
+.pokeh2 .psprite{width:44px;height:44px;flex:0 0 auto;object-fit:contain;image-rendering:pixelated;
+  filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))}
 /* dexnummer als tegel-badge (rechtsboven op de kaart) */
 .dexno{position:absolute;top:6px;right:6px;z-index:2;font-family:var(--font-pixel);font-size:9px;
   line-height:1;padding:4px 5px;border-radius:6px;color:var(--on-accent);background:var(--accent);
@@ -389,7 +377,7 @@ footer{max-width:1100px;margin:8px auto 0;padding:20px 16px;border-top:var(--bw)
   <div class="dexbar">
     <span class="dexlens" aria-hidden="true"></span>
     <span class="dexdots" aria-hidden="true"><i></i><i></i><i></i></span>
-    <h1><span class="wordmark">POKÉDEX</span></h1>
+    <h1><span class="wordmark">TCG-Finder</span></h1>
     <span class="hbtns">
       <button id="colBtn" title="Bekijk je bewaarde kaarten en hun totale waarde"><svg class="ico" aria-hidden="true"><use href="#i-grid"/></svg>Collectie</button>
       <button class="iconbtn" id="helpToggle" title="Uitleg" aria-label="Uitleg"><svg class="ico" aria-hidden="true"><use href="#i-help"/></svg></button>
@@ -1305,14 +1293,9 @@ async function hydrateSpecies(){
         else el.remove();
         return;
       }
-      // kopregel van een Pokémon-groep
-      if (!info){ el.classList.add('nospec'); return; }
-      const dexEl = el.querySelector('.pdex');
-      if (dexEl) dexEl.textContent = info.dex ? '#' + String(info.dex).padStart(3, '0') : '';
-      const flEl = el.querySelector('.pflavor');
-      if (flEl && info.flavor) flEl.textContent = info.flavor;
+      // kopregel van een Pokémon-groep: alleen de sprite ernaast (geen omschrijving/type/#)
       const spEl = el.querySelector('.psprite');
-      if (spEl && info.sprite){
+      if (spEl && info && info.sprite){
         spEl.src = info.sprite;
         spEl.hidden = false;
       }
@@ -1358,17 +1341,9 @@ function render(){
     list.forEach(c => (g[c.q] = g[c.q] || []).push(c));
     Object.keys(g).forEach(k => {
       const sp = slug(k);
-      const first = g[k][0];
-      const badges = typeChips(first.types);
-      html += `<div class="pokehead" data-sp="${h(sp)}">
-                 <div class="phinfo">
-                   <div class="phtop"><span class="pdex"></span>
-                     <h2>${h(k)} <small>${g[k].length} kaarten</small></h2></div>
-                   ${badges ? `<div class="tags phtags">${badges}</div>` : ''}
-                   <p class="pflavor"></p>
-                 </div>
+      html += `<h2 class="pokeh2" data-sp="${h(sp)}">
                  <img class="psprite" alt="" hidden referrerpolicy="no-referrer" onerror="this.hidden=true">
-               </div>
+                 ${h(k)} <small>${g[k].length} kaarten</small></h2>
                <div class="grid">${g[k].map(cardHTML).join('')}</div>`;
     });
   } else if (grp === 'set'){
