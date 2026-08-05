@@ -984,7 +984,10 @@ function cmTitle(c){
   if (c.eur != null) bits.push((c.eurIsTrend === false ? 'gem. verkoopprijs (geen trend beschikbaar) ' : 'trend ') + money(c.eur,'EUR'));
   if (c.cmAvg30 != null) bits.push('gem. 30 dagen ' + money(c.cmAvg30,'EUR'));
   if (c.cmDate) bits.push('prijsstand ' + c.cmDate);
-  const head = c.cmUrl ? 'Cardmarket — direct naar deze kaart' : 'Cardmarket — zoekresultaten';
+  const head = c.cmUrl ? 'Cardmarket — direct naar deze kaart'
+             : (c.region === 'JP'
+                ? 'Cardmarket (Japans: prijs indicatief van TCGdex, vaak onder de Engelse naam/print)'
+                : 'Cardmarket — zoekresultaten');
   return bits.length ? head + ' · ' + bits.join(' · ') : head;
 }
 /* ---------- verzamellijst (opgeslagen in de browser) ---------- */
@@ -1162,6 +1165,12 @@ function openCard(i){
         <tr><th>Gemiddelde 30 dagen</th><td><a href="${h(cmLink(c))}" target="_blank" rel="noopener">${eur(c.cmAvg30)}</a></td></tr>
         ${c.cmDate ? `<tr><th>Prijsstand van</th><td>${h(c.cmDate)} <span style="color:var(--dim)">— Cardmarket zelf kan actueler zijn</span></td></tr>` : ''}
       </table>
+      ${c.region === 'JP' ? `<p class="meta" style="margin:6px 0 0;line-height:1.5">Let op — dit is een <b>Japanse</b> kaart.
+        Cardmarket voert die (als het al kan) onder de <b>Engelse</b> naam en met eigen prints
+        (bijv. gewone versie vs. full-art), en heeft geen Japanse namen. Deze prijs komt van TCGdex
+        en is daarom <b>indicatief</b>: hij kan afwijken van de kaart die je zelf op Cardmarket vindt.
+        Voor Japanse kaarten is <b>PriceCharting</b> (hieronder, aparte Japanse sectie op naam + nummer)
+        vaak de betrouwbaardere prijsbron.</p>` : ''}
       <h4>PriceCharting</h4>
       <table class="mtab">
         <tr><th>Ungraded-prijs</th><td><a href="${h(pcSearch(c))}" target="_blank" rel="noopener">opzoeken bij PriceCharting ↗</a> <span style="color:var(--dim)">(graded/PSA staat op dezelfde pagina)</span></td></tr>
