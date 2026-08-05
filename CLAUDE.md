@@ -84,6 +84,11 @@ Dit bestand is voor Claude (en andere ontwikkelaars): huisregels die bij elke wi
 
 ## Bekende valkuilen
 
+- **Autocomplete-`<datalist>` klein houden.** Nooit alle ~2000 Pokémon/Trainer-namen tegelijk
+  als `<option>` in de DOM zetten — dat laat het typen op mobiel (vooral iOS Safari) vastlopen.
+  De namen staan in het geheugen (`POKENAMES`); `updatePokeSuggestions()` vult de datalist met
+  hooguit ~20 matches voor de laatst getypte term (op `input`).
+
 - pokemontcg.io geeft geregeld 500 bij heel brede queries ("bevat"-wildcards, alleen een
   supertype); toon dan de gebruikte query en probeer een lichtere variant.
 - TCGdex-prijzen zitten in het detail-endpoint per kaart — vergeet `addTcgdexPrices()` niet
