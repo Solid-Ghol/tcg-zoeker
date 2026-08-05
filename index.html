@@ -564,12 +564,28 @@ function money(v, cur){
     {minimumFractionDigits:2, maximumFractionDigits:2});
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+// Caching-proxy op de eigen server (Vercel): herhaalde verzoeken komen dan uit de edge-cache.
+// Bestaat de proxy niet (bijv. op GitHub Pages zonder server), dan praat de zoeker gewoon
+// rechtstreeks met de API's. PROXY_STATE: null = onbekend, true = proxy aanwezig, false = niet.
+let PROXY_STATE = null;
+const proxyWrap = url => '/api/proxy?u=' + encodeURIComponent(url);
+async function fetchMaybeProxy(url){
+  if (PROXY_STATE !== false){
+    try {
+      const r = await fetch(proxyWrap(url), {headers:{'Accept':'application/json'}});
+      // De proxy zet een 'x-proxy'-header; ontbreekt die, dan is er hier geen proxy → voortaan direct.
+      if (r.headers.get('x-proxy') != null){ PROXY_STATE = true; return r; }
+      PROXY_STATE = false;
+    } catch(e){ PROXY_STATE = false; }
+  }
+  return fetch(url, {headers:{'Accept':'application/json'}});
+}
 // Haalt JSON op en probeert het opnieuw bij serverfouten (500/502/503) of een netwerkhapering.
 async function getJSON(url, tries = 3){
   let last, fatal = false;
   for (let i = 0; i < tries && !fatal; i++){
     try {
-      const r = await fetch(url, {headers:{'Accept':'application/json'}});
+      const r = await fetchMaybeProxy(url);
       if (r.ok) return r.json();
       last = new Error(r.status + (r.statusText ? ' ' + r.statusText : ''));
       if (r.status < 500 && r.status !== 429) fatal = true;  // 404 e.d.: opnieuw proberen heeft geen zin

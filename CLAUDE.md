@@ -13,8 +13,15 @@ Dit bestand is voor Claude (en andere ontwikkelaars): huisregels die bij elke wi
 - **Mobiel-eerst.** De zoeker moet prettig werken op een telefoon: duimbare knoppen,
   16px-invoervelden (anders zoomt iOS-Safari in), `env(safe-area-inset-*)` respecteren.
   Test elke wijziging ook op een smal scherm (±390px).
-- **Alles in één `index.html`.** Geen build, geen dependencies, geen externe assets —
-  de site draait op GitHub Pages en praat rechtstreeks met open API's vanuit de browser.
+- **Front-end in één `index.html`.** Alle front-endcode (opmaak + JS) in dat ene bestand:
+  geen build, geen dependencies, geen externe assets. De front-end blijft standalone werken —
+  hij praat desnoods rechtstreeks met de open API's vanuit de browser (bijv. kaal op GitHub
+  Pages). Extra server-functionaliteit hoort NIET in `index.html` maar in de map `api/`
+  (Vercel-serverfuncties, plain Node, ook zonder dependencies). Nu aanwezig: `api/identify.js`
+  (foto-herkenning) en `api/proxy.js` (caching-proxy vóór de open API's, edge-cache met
+  stale-while-revalidate; de front-end gebruikt `/api/proxy` automatisch en valt terug op
+  rechtstreeks ophalen als de proxy er niet is — zie `fetchMaybeProxy`/`PROXY_STATE`). Het
+  project draait op Vercel met automatische deploy vanaf `main`; zie README (architectuur).
 - **Escape dynamische tekst.** Alles wat uit een API of invoerveld komt gaat door `h(...)`
   voordat het in HTML belandt.
 - **Nederlands.** Alle zichtbare teksten (en bij voorkeur codecommentaar) in het Nederlands.
