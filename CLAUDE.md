@@ -80,7 +80,12 @@ Dit bestand is voor Claude (en andere ontwikkelaars): huisregels die bij elke wi
 - pokemontcg.io geeft geregeld 500 bij heel brede queries ("bevat"-wildcards, alleen een
   supertype); toon dan de gebruikte query en probeer een lichtere variant.
 - TCGdex-prijzen zitten in het detail-endpoint per kaart — vergeet `addTcgdexPrices()` niet
-  voor elke TCGdex-lijst (ook Japans!).
+  voor elke TCGdex-lijst (ook Japans!). Structuur (zie tcgdex.dev/markets-prices): `d.pricing`
+  (spiegelt de hoofdvariant; anders de eerste `d.variants_detailed[].pricing`) met
+  `cardmarket` = plat object in EUR (`trend` = Cardmarket "Price Trend", `avg30`, `avg`, `low`
+  = laagste over álle condities dus onbetrouwbaar laag, `updated`, `idProduct`) en `tcgplayer`
+  = per drukvariant (`holofoil`/`normal`/…) met `marketPrice` (USD). Lees exact deze velden —
+  geen "zoek maar een getal"-heuristiek, die pakt de verkeerde variant.
 - TCGdex-afbeeldingen bestaan niet altijd in elk formaat (vooral Japanse kaarten missen soms
   `.webp`). De `<img onerror="imgErr(this)">`-helper probeert daarom `.webp` → `.png` → `.jpg`,
   daarna een `data-alt` (kleine versie in het detailvenster), en pas dán de placeholder. Nooit

@@ -742,23 +742,39 @@ async function addTcgdexPrices(cards, lang, max = 60){
           if (!c.img) c.img = d.image + '/low.webp';
           if (!c.imgBig) c.imgBig = d.image + '/high.webp';
         }
-        const p = d.pricing || d.prices || null;
-        if (p){
-          const cm = p.cardmarket || p;
-          const trendVal = digPrice(cm, ['trend','trendPrice']);
-          c.eur = trendVal != null ? trendVal
-                : digPrice(cm, ['avg','avg7','avg30','averageSellPrice','low']);
-          c.eurIsTrend = trendVal != null;
-          if (typeof cm.updated === 'string') c.cmDate = cm.updated;
-          const lowEx = digPrice(cm, ['lowPriceExPlus','lowExPlus','low-ex-plus']);
-          const lowAny = digPrice(cm, ['low','lowPrice','low1']);
-          c.cmLow = lowEx != null ? lowEx : lowAny;
-          c.cmLowEx = lowEx != null;
-          c.cmAvg30 = digPrice(cm, ['avg30','avg']);
-          c.usd = digPrice(p.tcgplayer || {}, ['marketPrice','market','mid','directLow','lowPrice']);
-          // levert TCGdex zelf een directe Cardmarket-link mee, dan wint die van onze
-          // geconstrueerde redirect (die is een gok op basis van het kaart-id)
-          if (cm && typeof cm.url === 'string' && cm.url.startsWith('http')) c.cmUrl = cm.url;
+        // Prijzen volgens de gedocumenteerde TCGdex-structuur (zie tcgdex.dev/markets-prices):
+        // d.pricing spiegelt de hoofdvariant; ontbreekt die, dan de eerste variant met data.
+        // Cardmarket is een plat object (EUR): trend = de "Price Trend", avg30 = gem. 30 dagen,
+        // low = laagste aanbod (telt álle condities mee, dus onbetrouwbaar laag). TCGplayer (USD)
+        // is per drukvariant (holofoil/normal/…) met marketPrice.
+        const num = v => (typeof v === 'number' && !isNaN(v)) ? v : null;
+        let pr = d.pricing;
+        if ((!pr || (!pr.cardmarket && !pr.tcgplayer)) && Array.isArray(d.variants_detailed)){
+          const v = d.variants_detailed.find(x => x.pricing && (x.pricing.cardmarket || x.pricing.tcgplayer));
+          if (v) pr = v.pricing;
+        }
+        if (pr){
+          const cm = pr.cardmarket;
+          if (cm){
+            const trend = num(cm.trend);
+            c.eur = trend != null ? trend : (num(cm.avg30) != null ? num(cm.avg30) : num(cm.avg));
+            c.eurIsTrend = trend != null;
+            c.cmLow = num(cm.low);
+            c.cmLowEx = false;                 // TCGdex kent geen apart near-mint-laagste
+            c.cmAvg30 = num(cm.avg30);
+            if (typeof cm.updated === 'string') c.cmDate = cm.updated;
+          }
+          const tp = pr.tcgplayer;
+          if (tp && typeof tp === 'object'){
+            for (const k of Object.keys(tp)){
+              const v = tp[k];
+              if (v && typeof v === 'object'){
+                const m = num(v.marketPrice) != null ? num(v.marketPrice)
+                        : (num(v.midPrice) != null ? num(v.midPrice) : num(v.lowPrice));
+                if (m != null){ c.usd = m; break; }
+              }
+            }
+          }
         }
       } catch(e){ /* prijs is optioneel */ }
     }));
