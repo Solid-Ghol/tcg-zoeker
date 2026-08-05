@@ -1412,10 +1412,26 @@ async function loadPokeNames(){
     const d = await getJSON('https://pokeapi.co/api/v2/pokemon-species?limit=2000');
     mons = (d.results || []).map(s => pokeDisplay(s.name));
   } catch(e){ /* PokéAPI geblokkeerd? dan tonen we in elk geval de Trainer-suggesties */ }
-  // Pokémon én Trainer-kaarten samen, ontdubbeld en alfabetisch.
+  // Pokémon én Trainer-kaarten samen, ontdubbeld en alfabetisch — enkel in het geheugen.
   POKENAMES = [...new Set([...mons, ...TRAINER_NAMES])].sort((a, b) => a.localeCompare(b));
-  document.getElementById('pokelist').innerHTML =
-    POKENAMES.map(n => `<option value="${h(n)}">`).join('');
+  updatePokeSuggestions();   // meteen suggesties voor wat er al staat
+}
+// De <datalist> klein houden: NOOIT alle ~2000 namen tegelijk in de DOM zetten — dat laat
+// het typen op mobiel (vooral iOS Safari) vastlopen. Vul hem met hooguit een handvol matches
+// voor de laatste zoekterm die je typt.
+function updatePokeSuggestions(){
+  const dl = document.getElementById('pokelist');
+  if (!POKENAMES || !dl) return;
+  const term = (document.getElementById('q').value.split(',').pop() || '').trim().toLowerCase();
+  if (term.length < 2){ dl.innerHTML = ''; return; }
+  const starts = [], has = [];
+  for (const n of POKENAMES){
+    const l = n.toLowerCase();
+    if (l.startsWith(term)) starts.push(n);
+    else if (l.includes(term)) has.push(n);
+    if (starts.length >= 20) break;
+  }
+  dl.innerHTML = [...starts, ...has].slice(0, 20).map(n => `<option value="${h(n)}">`).join('');
 }
 function renderSetBrowser(sets){
   const g = {};
@@ -1466,6 +1482,8 @@ document.getElementById('setbrowser').addEventListener('click', e => {
 });
 // Pokémon-namen alvast ophalen voor de autocomplete zodra het zoekveld focus krijgt
 document.getElementById('q').addEventListener('focus', () => loadPokeNames().catch(() => {}), {once:true});
+// tijdens het typen de suggestielijst klein en relevant houden (geen 2000 opties in de DOM)
+document.getElementById('q').addEventListener('input', updatePokeSuggestions);
 
 /* ---------- foto-herkenning: kaart fotograferen -> naam + nummer -> zoeken ---------- */
 // Het endpoint is een kleine serverfunctie (zie README/Vercel) die de foto naar het
