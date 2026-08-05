@@ -298,6 +298,13 @@ footer{max-width:1100px;margin:8px auto 0;padding:20px 16px;border-top:var(--bw)
   .grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px}
 }
 @media (max-width:759px){
+  /* mobiel: zoekbalk op één regel — veld + camera + lens(zoek) + wis */
+  .searchbar{flex-wrap:nowrap;gap:8px}
+  .searchbar #q{flex:1 1 auto;min-width:0}
+  .searchbar #go{order:3;flex:0 0 auto;padding:11px 12px}
+  .searchbar #go .lbl{display:none}          /* zoekknop toont alleen de lens */
+  .searchbar #photoBtn{order:2;flex:0 0 auto}
+  .searchbar #reset{order:4;flex:0 0 auto}
   /* mobiel: filterbalk als één veegbare regel */
   .cscroll{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
   .cscroll::-webkit-scrollbar{display:none}
@@ -384,9 +391,8 @@ footer{max-width:1100px;margin:8px auto 0;padding:20px 16px;border-top:var(--bw)
     <datalist id="pokelist"></datalist>
     <input type="hidden" id="mode" value="auto">
     <button class="iconbtn" id="photoBtn" title="Scan een kaart met de camera — of kies een foto uit je fotorol" aria-label="Scan een kaart"><svg class="ico" aria-hidden="true"><use href="#i-cam"/></svg></button>
-    <button class="primary" id="go"><svg class="ico" aria-hidden="true"><use href="#i-lens"/></svg>Zoek</button>
+    <button class="primary" id="go" title="Zoeken" aria-label="Zoeken"><svg class="ico" aria-hidden="true"><use href="#i-lens"/></svg><span class="lbl">Zoek</span></button>
     <button class="iconbtn" id="reset" title="Maak het zoekveld leeg" aria-label="Wis zoekveld"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></button>
-    <button class="iconbtn" id="browseSets" title="Blader door alle sets" aria-label="Blader door alle sets"><svg class="ico" aria-hidden="true"><use href="#i-cards"/></svg></button>
     <input type="file" id="photoFile" accept="image/*" hidden>
   </div>
   <div class="helppanel" id="helppanel">
@@ -437,6 +443,7 @@ footer{max-width:1100px;margin:8px auto 0;padding:20px 16px;border-top:var(--bw)
     <option value="JP">Alleen Japans</option>
   </select>
   <button id="filterReset" title="Zet alle filters terug"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg>Wis</button>
+  <button class="btn" id="browseSets" title="Blader door alle sets" aria-label="Blader door alle sets"><svg class="ico" aria-hidden="true"><use href="#i-cards"/></svg>Sets</button>
   <span class="flabel" style="margin-left:6px">Weergave:</span>
   <input type="hidden" id="grp" value="pokemon">
   <div class="stabs vsm" role="group" aria-label="Weergave van de resultaten">
@@ -1429,6 +1436,8 @@ function togglePanel(id){
 async function toggleSetBrowser(){
   const box = document.getElementById('setbrowser');
   if (!togglePanel('setbrowser')) return;
+  // de setbrowser staat in de koptekst; bij openen vanuit de filterbalk even in beeld brengen
+  box.scrollIntoView({behavior:'smooth', block:'start'});
   box.innerHTML = '<span class="spinner"></span> Sets laden…';
   try { box.innerHTML = renderSetBrowser(await loadAllSets()); }
   catch(e){ box.innerHTML = '<span style="color:var(--red)">Sets laden mislukt (' + h(e.message) +
