@@ -816,20 +816,39 @@ async function addTcgdexPrices(cards, lang, max = 60){
 async function fetchEnglish(name, mode, prefer){
   fetchEnglish.via = 'naam';
   fetchEnglish.lastError = '';
-  if (prefer !== 'tcgdex'){
-    try {
-      const r = await fetchEnglishPtcg(name, mode);
-      fetchEnglish.source = 'pokemontcg.io';
-      if (r.length || prefer === 'ptcg') return r;
-    } catch(e){
-      fetchEnglish.lastError = e.message;
-      if (prefer === 'ptcg') throw e;
-    }
+  // Alleen TCGdex gevraagd? Dan puur die bron.
+  if (prefer === 'tcgdex'){
+    const r = await fetchTcgdex(name, 'en', mode, '');
+    fetchEnglish.source = 'TCGdex';
+    await addTcgdexPrices(r, 'en');
+    return r;
   }
-  const r = await fetchTcgdex(name, 'en', mode, '');
-  fetchEnglish.source = 'TCGdex';
-  await addTcgdexPrices(r, 'en');
-  return r;
+  // pokemontcg.io eerst: die heeft de prijzen en directe Cardmarket-links al bij zich.
+  let ptcg = [];
+  try {
+    ptcg = await fetchEnglishPtcg(name, mode);
+    fetchEnglish.source = 'pokemontcg.io';
+  } catch(e){
+    fetchEnglish.lastError = e.message;
+    if (prefer === 'ptcg') throw e;
+  }
+  if (prefer === 'ptcg') return ptcg;
+  // 'auto': ook TCGdex erbij en de kaarten mergen die pokemontcg.io (nog) niet heeft. De
+  // pokemontcg.io-database loopt achter en mist gloednieuwe sets/promo's (bijv. de Mega
+  // Evolution Black Star Promos) — die vult TCGdex aan, zónder de bestaande dubbel te tonen.
+  let extras = [];
+  try {
+    const td = await fetchTcgdex(name, 'en', mode, '');
+    // dedup: zelfde kaart = zelfde genormaliseerd id (sv03->sv3, .5->pt5) óf zelfde set+nummer.
+    const norm = id => String(id || '').replace(/^([a-z]+)0+(\d)/, '$1$2').replace('.5', 'pt5');
+    const numKey = c => slug(c.set || '') + '#' + String(c.number || '').replace(/^0+/, '');
+    const haveId = new Set(ptcg.map(c => c.id).filter(Boolean));
+    const haveNum = new Set(ptcg.map(numKey));
+    extras = td.filter(c => !haveId.has(norm(c.id)) && !haveNum.has(numKey(c)));
+    if (extras.length) await addTcgdexPrices(extras, 'en');
+  } catch(e){ /* TCGdex is optioneel; de pokemontcg.io-resultaten blijven gewoon staan */ }
+  if (!ptcg.length && extras.length) fetchEnglish.source = 'TCGdex';
+  return ptcg.concat(extras);
 }
 
 /* ---------- Japanse kaarten: PokéAPI (naam) + TCGdex ---------- */
