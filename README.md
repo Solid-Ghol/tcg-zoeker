@@ -73,7 +73,40 @@ Je themakeuze wordt onthouden op je apparaat.
 - **Jeroen** — amberkleurig thema met kleine Pokémon-fossielen (Helix- en Dome-fossiel)
   als patroon op de achtergrond. Puur voor de sier.
 
+## Hoe de zoeker draait (architectuur)
+
+De zoeker bestaat uit twee lagen:
+
+1. **De front-end — één `index.html`.** Alle opmaak en code (zoeken, filteren, collectie, thema's)
+   zit in dat ene bestand; geen build, geen dependencies, geen externe assets. Deze laag praat
+   standaard **rechtstreeks** met de open API's (pokemontcg.io, TCGdex, PokéAPI) vanuit de browser
+   en werkt dus ook prima kaal op GitHub Pages.
+2. **Een optionele serverlaag — de map `api/` op [Vercel](https://vercel.com/).** Kleine
+   serverfuncties die de front-end méér laten kunnen zónder geheime sleutels in de openbare pagina
+   te zetten:
+   - `api/identify.js` — **foto-herkenning**: leest een gefotografeerde kaart af via een
+     vision-model (zie *[Foto-herkenning instellen](#foto-herkenning-instellen)*). De API-sleutel
+     staat als omgevingsvariabele op de server.
+   - `api/proxy.js` — **caching-proxy**: zet een cache-laag vóór de open API's. Elk opgevraagd
+     verzoek wordt op de edge van Vercel bewaard (±1 uur vers, daarna tot een dag
+     *stale-while-revalidate*), zodat dezelfde zoekopdracht of kaart de tweede keer — door jou of
+     een andere bezoeker — meteen terugkomt en de bron-API's ontlast worden. De front-end herkent
+     automatisch of de proxy bestaat (`/api/proxy`); zo niet, dan valt hij terug op rechtstreeks
+     ophalen. **Waarom niet elk kwartier verversen?** De prijzen bij de bron zijn een dagelijkse
+     momentopname (Cardmarket's eigen API is dicht), dus vaker ophalen levert dezelfde cijfers.
+
+**Deployen gaat vanzelf.** Het project staat op Vercel, gekoppeld aan de GitHub-repository: elke
+wijziging op de `main`-branch wordt automatisch gebouwd en live gezet. De front-end (`index.html`)
+en de statische bestanden worden als gewone bestanden geserveerd; alles onder `api/` draait als
+serverfunctie. Wil je liever de front-end op GitHub Pages houden en alleen de functies op Vercel,
+dan kan dat ook — de front-end vindt de functies via het tandwiel-veld of valt terug op direct.
+
 ## Online zetten via GitHub Pages
+
+> Sinds de foto-herkenning en de caching-proxy is **Vercel** de eenvoudigste plek om alles neer te
+> zetten (front-end én functies op één adres, automatische deploy vanuit GitHub) — zie de
+> architectuur hierboven en *[Foto-herkenning instellen](#foto-herkenning-instellen)*. GitHub Pages
+> hieronder blijft werken voor de kale zoeker (zonder de serverfuncties).
 
 De zoeker haalt kaartgegevens en prijzen op bij twee open API's. Browsers staan dat alleen toe
 wanneer de pagina zelf via `http(s)://` geserveerd wordt. Vanaf de bestandsopslag (`file://`)
@@ -90,7 +123,8 @@ zetten.
 | `apple-touch-icon.png` | pictogram voor "Zet op beginscherm" op iOS |
 | `icon-512.png` | pictogram voor Android en desktopbrowsers |
 | `manifest.webmanifest` | zorgt dat de zoeker als eigen app opent in plaats van als tabblad |
-| `api/identify.js` | **alleen nodig voor de foto-herkenning** — de serverfunctie voor Vercel (zie hieronder) |
+| `api/identify.js` | **alleen nodig voor de foto-herkenning** — serverfunctie voor Vercel (zie hieronder) |
+| `api/proxy.js` | **optioneel** — caching-proxy op Vercel die het zoeken versnelt (zie architectuur) |
 
 Dit `README.md` hoeft niet mee, maar mag. Zoeken, filteren, de collectie en alle prijzen
 werken volledig zonder `api/identify.js`; die map is puur voor de foto-herkenning.
@@ -196,9 +230,12 @@ Gemini blijf je binnen de gratis tier, bij Anthropic betaal je je eigen (zeer kl
 
 ## Privacy en kosten
 
-Er is geen server en geen database: de pagina draait volledig in de browser en praat rechtstreeks
-met de API's van pokemontcg.io en TCGdex. Er wordt niets van jou opgeslagen. GitHub Pages is
-gratis voor publieke repositories; er zijn geen limieten die je met dit gebruik gaat raken.
+Er is geen database: je collectie staat alleen in je eigen browser en er wordt niets van jou
+opgeslagen. De pagina draait in de browser en praat met de API's van pokemontcg.io en TCGdex —
+rechtstreeks, of (op Vercel) via de caching-proxy die alleen kaartgegevens doorgeeft. De
+optionele serverfuncties bewaren geen persoonlijke gegevens; de foto-herkenning stuurt je foto
+één keer door om de kaart af te lezen en bewaart hem niet. Zowel GitHub Pages als Vercel zijn
+gratis voor dit gebruik; je raakt geen limieten met normaal gebruik.
 
 Let op: een publieke repository betekent dat iedereen de pagina kan bekijken. Er staat geen
 persoonlijke of bedrijfsinformatie in, dus dat is hier geen bezwaar. Wil je hem toch afgeschermd
