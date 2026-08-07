@@ -551,13 +551,27 @@ function h(v){
 function ico(id, small){
   return `<svg class="ico${small ? ' s' : ''}" aria-hidden="true"><use href="#${id}"/></svg>`;
 }
-// Kaartafbeeldingen (vooral Japanse van TCGdex) bestaan niet altijd in elk formaat.
-// Probeer daarom .webp -> .png -> .jpg, dan een eventueel meegegeven alternatief
-// (data-alt: bijv. de kleine versie), en pas als laatste de "geen afbeelding"-placeholder.
+// Kaartafbeeldingen (vooral Japanse en gloednieuwe promo's van TCGdex) bestaan niet altijd
+// in elk formaat: soms mist de gevraagde grootte (low) terwijl 'high' er wél is, of andersom,
+// en niet elke extensie (.webp/.png/.jpg) is aanwezig. Loop daarom ALLE combinaties af
+// (low/high × webp/png/jpg) voordat we opgeven — anders tonen we onterecht "geen afbeelding".
+// TCGdex-URL's eindigen op /{grootte}.{extensie}; welke al geprobeerd zijn onthouden we op het
+// element (data-imgtried), zodat we niet in een kringetje blijven laden.
+const TCGDEX_RENDS = ['high.webp', 'high.png', 'high.jpg', 'low.webp', 'low.png', 'low.jpg'];
 function imgErr(el){
   const s = el.getAttribute('src') || '';
-  if (/\.webp(\?|$)/i.test(s)){ el.src = s.replace(/\.webp/i, '.png'); return; }
-  if (/\.png(\?|$)/i.test(s)){ el.src = s.replace(/\.png/i, '.jpg'); return; }
+  const m = s.match(/^(.*\/)(low|high)\.(webp|png|jpg)(\?.*)?$/i);
+  if (m){
+    const base = m[1], suffix = m[4] || '';
+    const tried = new Set((el.dataset.imgtried || '').split(',').filter(Boolean));
+    tried.add((m[2] + '.' + m[3]).toLowerCase());
+    const next = TCGDEX_RENDS.find(r => !tried.has(r));
+    if (next){ el.dataset.imgtried = [...tried].join(','); el.src = base + next + suffix; return; }
+  } else {
+    // Niet-TCGdex (bijv. pokemontcg.io): gewoon de extensie doorlopen.
+    if (/\.webp(\?|$)/i.test(s)){ el.src = s.replace(/\.webp/i, '.png'); return; }
+    if (/\.png(\?|$)/i.test(s)){ el.src = s.replace(/\.png/i, '.jpg'); return; }
+  }
   const alt = el.getAttribute('data-alt');
   if (alt){ el.removeAttribute('data-alt'); el.src = alt; return; }
   el.onerror = null;
