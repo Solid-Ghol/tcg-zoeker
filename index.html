@@ -233,11 +233,11 @@ h2 img.setlogo{height:26px;width:auto;vertical-align:middle}
 .setprog i{display:block;height:100%;background:var(--green)}
 /* prijstegels */
 .prices{display:flex;gap:7px;margin-top:auto;padding-top:9px}
-.pr{flex:1;text-align:left;border-radius:10px;padding:6px 8px;color:inherit;text-decoration:none;display:block;min-width:0;
+.pr{flex:1;text-align:left;border-radius:10px;padding:6px 6px;color:inherit;text-decoration:none;display:block;min-width:0;
   background:var(--surface2);border:2px solid var(--line)}
 .pr span{color:var(--dim);font-size:9px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;
   overflow:hidden;text-overflow:ellipsis;display:block;font-weight:800}
-.pr b{display:block;font-size:14px;font-variant-numeric:tabular-nums;color:var(--ink)}
+.pr b{display:block;font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
 .pr.main{background:var(--soft)}
 .pr.main b{color:var(--accent2)}
 @media(hover:hover){a.pr:hover{filter:brightness(.98)}}
@@ -612,8 +612,11 @@ function typeChips(types){
 }
 function money(v, cur){
   if (v == null || isNaN(v)) return '—';
+  // Grote bedragen zonder centen: "€6.312" i.p.v. "€6.312,26" — anders lopen ze uit de smalle
+  // prijs-pil op mobiel, en bij dure kaarten zijn centen toch ruis. Onder €100 wél centen.
+  const dec = Math.abs(v) >= 100 ? 0 : 2;
   return (cur === 'EUR' ? '€' : '$') + Number(v).toLocaleString('nl-NL',
-    {minimumFractionDigits:2, maximumFractionDigits:2});
+    {minimumFractionDigits:dec, maximumFractionDigits:dec});
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 // Caching-proxy op de eigen server (Vercel): herhaalde verzoeken komen dan uit de edge-cache.
