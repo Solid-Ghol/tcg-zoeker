@@ -705,13 +705,30 @@ function mapPtcg(c, qLabel){
            (c.id ? 'https://prices.pokemontcg.io/cardmarket/' + c.id : ''),
   };
 }
+// Lucene-veilige "bevat"-query voor pokemontcg.io: de term in woorden knippen, per woord de
+// niet-alfanumerieke tekens eruit en als *woord* (wildcard) met AND combineren. Zo vindt
+// "char" → Charizard/Charmander en "dark char" → Dark Charizard, zonder syntaxfouten. Woorden
+// korter dan 2 tekens laten we weg; blijft er niets over, dan zoeken we exact (met "…").
+function containsQuery(field, term){
+  const toks = term.toLowerCase().split(/\s+/)
+    .map(t => t.replace(/[^a-z0-9]/g, ''))
+    .filter(t => t.length >= 2);
+  if (!toks.length) return `${field}:"${term.replace(/"/g, '')}"`;
+  return toks.map(t => `${field}:*${t}*`).join(' ');
+}
 async function fetchEnglishPtcg(name, mode){
   let all = [], via = 'naam';
   if (mode !== 'set'){
-    all = await queryEnglish(`name:"${name}"`);
+    // Standaard op deel van een woord zoeken ("bevat"). pokemontcg.io kan bij een heel brede
+    // wildcard een 500 geven → dan terugvallen op de exacte naam (de "lichtere" variant).
+    try { all = await queryEnglish(containsQuery('name', name)); }
+    catch(e){
+      fetchEnglish.lastError = 'bevat-zoek mislukte (' + e.message + '), exacte naam geprobeerd';
+      all = await queryEnglish(`name:"${name.replace(/"/g, '')}"`);
+    }
   }
   if (!all.length && mode !== 'name'){
-    const bySet = await queryEnglish(`set.name:"${name}"`);
+    const bySet = await queryEnglish(containsQuery('set.name', name)).catch(() => []);
     if (bySet.length){ all = bySet; via = 'set'; }
   }
   fetchEnglish.via = via;
