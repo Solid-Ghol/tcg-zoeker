@@ -10,9 +10,9 @@ tekst via `h()`, iconen als SVG-symbolen (géén emoji). Uitrollen via branch �
 
 ## Volgorde (afgesproken)
 
-1. **E2** — Beginpagina: waardevolste kaarten + filters zichtbaar
-2. **E3** — Gedeeltelijk zoeken ("bevat")
-3. **E1** — Accounts & cloud-sync
+1. ✅ **E2** — Beginpagina: waardevolste kaarten + filters zichtbaar — *afgerond*
+2. ✅ **E3** — Gedeeltelijk zoeken ("bevat") — *afgerond*
+3. ⏳ **E1** — Accounts & cloud-sync — *volgende*
 4. *(daarna, nog te plannen)* **E4** bulk naar collectie · **E5** binder + verlanglijst · **E6** beursagenda
 
 De drie snelle winsten E2/E3 (+ later E4) zijn onafhankelijk; E1 is het fundament dat de
@@ -30,7 +30,7 @@ Cross-device binders/collectie/verlanglijst vereist opslag buiten de browser.
   opslagbackend (Vercel Postgres/KV of Supabase) + gratis-tier-limieten.
 - Claude voert nooit zelf wachtwoorden in — auth *bouwen* mag; de echte login test de gebruiker.
 
-## E2 · Beginpagina: waardevolste kaarten + filters (punt 3 + 4) · effort: M
+## E2 · Beginpagina: waardevolste kaarten + filters (punt 3 + 4) · effort: M · ✅ afgerond
 - Startpagina toont de **duurste kaarten** i.p.v. de lege tekst.
 - **Geverifieerd:** pokemontcg.io ondersteunt server-side prijs-sortering
   (`orderBy=-cardmarket.prices.trendPrice`) → één cachebare query levert de top mét prijzen.
@@ -38,10 +38,12 @@ Cross-device binders/collectie/verlanglijst vereist opslag buiten de browser.
   voor volgende pagina's.
 - Onafhankelijk van accounts. Eerste zichtbare winst.
 
-## E3 · Gedeeltelijk zoeken ("bevat", punt 2) · effort: S–M
-- Hoofdzoekbalk matcht op deel van een woord (`name:*char*` → Charizard/Charmander).
-- Valkuil: pokemontcg.io geeft 500 bij te brede queries → lichte-variant-terugval + melding
-  (bestaand patroon).
+## E3 · Gedeeltelijk zoeken ("bevat", punt 2) · effort: S–M · ✅ afgerond
+- Hoofdzoekbalk matcht op deel van een woord (`name:*char*` → Charizard/Charmander) — in de
+  bestaande ene zoekbalk, geen extra toggle. TCGdex deed dit al via `?name=`; het pokemontcg.io-
+  pad is van exact (`name:"X"`) naar bevat gebracht.
+- `containsQuery()` knipt de term in woorden en maakt er `veld:*woord*`-AND van (Lucene-veilig,
+  symbolen eruit). Bij een 500 op een te brede wildcard: terugval op de exacte naam.
 
 ## E4 · Meerdere kaarten tegelijk naar collectie (punt 1) · effort: S–M
 - **Selectiemodus** (vinkjes op tegels + "selectie toevoegen") en snelknoppen "hele set
