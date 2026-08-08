@@ -1456,11 +1456,34 @@ document.addEventListener('keydown', e => {
   if (e.key === 'ArrowRight') stepCard(1);
 });
 /* ---------- set-browser: alle sets ophalen (API) en per serie tonen ---------- */
+// Sets komen van TCGdex (net als het zoeken zelf), NIET van pokemontcg.io: die Engelse
+// database loopt achter en mist gloednieuwe sets én álle Japanse sets. TCGdex kent per taal
+// de series ('/series') en per serie de bijbehorende sets ('/series/{id}'); zo krijgen we
+// alle Engelse én Japanse sets, netjes per serie gegroepeerd.
 let ALLSETS = null;
+async function loadTcgdexSets(lang){
+  const region = lang === 'ja' ? 'JP' : 'EN';
+  const series = await getJSON(`https://api.tcgdex.net/v2/${lang}/series`).catch(() => []);
+  // Per serie het detail ophalen (bevat de setlijst); een enkele misser slaan we over.
+  const details = await Promise.all((series || []).map(s =>
+    getJSON(`https://api.tcgdex.net/v2/${lang}/series/${s.id}`).catch(() => null)));
+  const out = [];
+  details.forEach((d, i) => {
+    if (!d) return;
+    const sname = d.name || (series[i] && series[i].name) || 'Overig';
+    (d.sets || []).forEach(st => out.push({ id: st.id, name: st.name, series: sname, region }));
+  });
+  return out;
+}
 async function loadAllSets(){
   if (ALLSETS) return ALLSETS;
-  const d = await getJSON('https://api.pokemontcg.io/v2/sets?select=id,name,series,releaseDate&pageSize=250&orderBy=series');
-  ALLSETS = d.data || [];
+  // Engels en Japans parallel; als één taal faalt tonen we in elk geval de andere.
+  const [en, ja] = await Promise.all([
+    loadTcgdexSets('en').catch(() => []),
+    loadTcgdexSets('ja').catch(() => []),
+  ]);
+  ALLSETS = [...en, ...ja];
+  if (!ALLSETS.length) throw new Error('geen sets ontvangen');
   return ALLSETS;
 }
 /* ---------- autocomplete: Pokémon-namen tijdens het typen ---------- */
@@ -1533,13 +1556,20 @@ function updatePokeSuggestions(){
   dl.innerHTML = [...starts, ...has].slice(0, 20).map(n => `<option value="${h(n)}">`).join('');
 }
 function renderSetBrowser(sets){
+  // Groeperen per serie. Japanse series krijgen een label-achtervoegsel én komen ná de
+  // Engelse (sommige serienamen bestaan in beide talen). Binnen een serie sorteren we op
+  // set-id (numeriek, nieuwste eerst) — de API geeft per set geen losse releasedatum.
   const g = {};
-  sets.forEach(s => (g[s.series || 'Overig'] = g[s.series || 'Overig'] || []).push(s));
-  const series = Object.keys(g).sort((a,b) => a.localeCompare(b));
+  sets.forEach(s => {
+    const key = (s.series || 'Overig') + (s.region === 'JP' ? ' — Japans' : '');
+    (g[key] = g[key] || { region: s.region, items: [] }).items.push(s);
+  });
+  const keys = Object.keys(g).sort((a,b) =>
+    (g[a].region === 'JP') - (g[b].region === 'JP') || a.localeCompare(b));
   return '<p class="shint">Klik een set om alle kaarten ervan op te halen (' + sets.length + ' sets).</p>' +
-    series.map(sr => `<div class="sgroup"><h3>${h(sr)}</h3><div class="schips">` +
-      g[sr].sort((a,b) => (b.releaseDate||'').localeCompare(a.releaseDate||''))
-           .map(s => `<a class="schip" data-set="${h(s.name)}">${h(s.name)}</a>`).join('') +
+    keys.map(k => `<div class="sgroup"><h3>${h(k)}</h3><div class="schips">` +
+      g[k].items.sort((a,b) => String(b.id).localeCompare(String(a.id), undefined, {numeric:true}))
+                .map(s => `<a class="schip" data-set="${h(s.name)}">${h(s.name)}</a>`).join('') +
       '</div></div>').join('');
 }
 // de invouwpanelen (sets, uitleg, instellingen): er is er altijd hooguit één open
