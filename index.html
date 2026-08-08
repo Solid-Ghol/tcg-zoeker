@@ -187,6 +187,12 @@ h1{margin:0;color:var(--on-header);flex:1;line-height:1;display:flex;align-items
 
 /* ---------- resultaten ---------- */
 main{max-width:1100px;margin:0 auto;padding:16px}
+.landcap{max-width:1100px;margin:0 auto;padding:14px 16px 0}
+.landcap:empty{display:none}
+.landhead{color:var(--dim);font-size:14px}
+.landhead b{color:var(--ink)}
+.landmore{max-width:1100px;margin:0 auto;padding:4px 16px 28px;display:flex;justify-content:center}
+.landmore:empty{display:none}
 h2{font-size:20px;margin:22px 0 12px;display:flex;align-items:baseline;gap:10px;color:var(--ink);
   padding-bottom:6px;border-bottom:var(--bw) solid var(--line-soft)}
 h2 small{color:var(--dim);font-size:13px;font-family:var(--font-body);font-weight:600}
@@ -491,7 +497,9 @@ footer{max-width:1100px;margin:8px auto 0;padding:20px 16px;border-top:var(--bw)
   </div>
 </div>
 
+<div id="landcap" class="landcap"></div>
 <main id="out"><p class="empty">Nog niets opgehaald — typ hierboven een Pokémon en klik op Zoeken.</p></main>
+<div id="landmore" class="landmore"></div>
 
 <div class="modal" id="modal">
   <div class="modalbox" role="dialog" aria-modal="true" aria-label="Kaartdetails">
@@ -642,8 +650,12 @@ async function getJSON(url, tries = 3){
 const CJK = /[぀-ヿ㐀-䶿一-鿿ｦ-ﾟ]/;
 const isJapanese = s => CJK.test(s);
 function slug(s){
+  // PokéAPI-slugs (en onze dedup-sleutels) zijn [a-z0-9-]. Strip daarom ook symbolen als
+  // ★/δ uit kaartnamen ("Umbreon ★" -> "umbreon"): anders geeft PokéAPI een 400 op de
+  // soort-lookup en verdwijnt het dexnummer-badge onterecht.
   return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
-          .replace(/['.’:]/g,'').replace(/\s+/g,'-');
+          .replace(/['.’:]/g,'').replace(/\s+/g,'-')
+          .replace(/[^a-z0-9-]/g,'').replace(/-+/g,'-').replace(/^-+|-+$/g,'');
 }
 
 /* ---------- Engelse kaarten: Pokémon TCG API ---------- */
@@ -947,7 +959,8 @@ async function run(){
         const right = parts.slice(1).join('/').trim();
         return { term: left, ja: right || '', cardNo };
       });
-  if (!entries.length) return;
+  if (!entries.length){ if (!COLVIEW) showLanding(); return; }   // leeg zoekveld: terug naar de beginpagina
+  clearLanding();   // een echte zoekopdracht vervangt de beginpagina
   if (COLVIEW){ COLVIEW = false; SAVEDVIEW = null; updateColBtn(); }  // nieuwe zoekopdracht sluit de collectieweergave
   // Getypt kaartnummer? Dan dezelfde "open de exacte kaart"-logica als bij de foto gebruiken.
   // Een lopende foto-scan (source 'photo', #q zonder nummer) laten we ongemoeid.
@@ -1120,8 +1133,12 @@ function showCollection(){
     toast('Je collectie is nog leeg — klik bij een kaart op <b>+ Collectie</b> om hem te bewaren.');
     return;
   }
-  SAVEDVIEW = { cards: CARDS, status: S.innerHTML, statusOn: S.className,
-                controls: document.getElementById('controls').className };
+  // Vanaf de beginpagina? Bewaar geen kaarten, dan keren we bij sluiten terug naar de
+  // beginpagina (i.p.v. de populaire kaarten als kale grid te laten staan).
+  const wasLanding = LANDING;
+  SAVEDVIEW = { cards: wasLanding ? [] : CARDS, status: S.innerHTML, statusOn: S.className,
+                controls: wasLanding ? 'controls' : document.getElementById('controls').className };
+  clearLanding();
   COLVIEW = true;
   updateColBtn();
   CARDS = items.map(c => ({...c}));
@@ -1148,15 +1165,91 @@ function exitCollection(){
     render();
   } else {
     CARDS = [];
-    document.getElementById('controls').className = 'controls';
     document.getElementById('csv').disabled = true;
     S.className = 'status';
-    OUT.innerHTML = '<p class="empty">Collectie gesloten — typ hierboven een Pokémon en klik op Zoeken.</p>';
+    showLanding();   // geen eerdere zoekresultaten: terug naar de beginpagina
   }
 }
 // de "terug"-link in de statusregel
 S.addEventListener('click', e => {
   if (e.target.id === 'colExit'){ e.preventDefault(); exitCollection(); }
+});
+
+/* ---------- beginpagina: de meest waardevolle kaarten ----------
+   In plaats van een lege startpagina tonen we meteen de duurste kaarten. pokemontcg.io kan
+   server-side op marktprijs sorteren (orderBy=-cardmarket.prices.trendPrice), dus één query
+   volstaat; de prijzen zitten al in het antwoord. De filterbalk staat meteen aan, zodat je
+   ook zonder te zoeken kunt filteren. "Meer laden" haalt de volgende pagina erbij. */
+let LANDING = false, LANDPAGE = 1, LANDBUSY = false;
+const LAND_PAGESIZE = 30;
+async function fetchTopValued(page){
+  const sel = 'id,name,number,rarity,types,supertype,subtypes,hp,attacks,weaknesses,' +
+              'resistances,retreatCost,artist,set,images,tcgplayer,cardmarket';
+  // Wat extra retries: pokemontcg.io hikt regelmatig met een 5xx/CORS-hapering. In productie
+  // vangt de caching-proxy (edge-cache + stale-while-revalidate) dit grotendeels af.
+  const d = await getJSON('https://api.pokemontcg.io/v2/cards?orderBy=-cardmarket.prices.trendPrice' +
+    `&page=${page}&pageSize=${LAND_PAGESIZE}&select=${sel}`, 5);
+  return (d.data || []).map(c => mapPtcg(c, c.name));
+}
+function renderLandMore(done){
+  document.getElementById('landmore').innerHTML = (LANDING && !done)
+    ? '<button class="btn" id="landMoreBtn">Meer laden</button>' : '';
+}
+function clearLanding(){
+  LANDING = false;
+  document.getElementById('landcap').innerHTML = '';
+  document.getElementById('landmore').innerHTML = '';
+}
+async function showLanding(){
+  if (COLVIEW) return;
+  LANDING = true; LANDPAGE = 1;
+  document.getElementById('controls').className = 'controls on';
+  setView('none');
+  document.getElementById('sort').value = 'price';
+  document.getElementById('landcap').innerHTML =
+    '<div class="landhead"><b>Populair nu</b> — de meest waardevolle kaarten. ' +
+    'Zoek hierboven op een kaart, of filter hieronder.</div>';
+  document.getElementById('landmore').innerHTML = '';
+  showSkeleton(12);
+  let cards;
+  try { cards = await fetchTopValued(1); }
+  catch(e){
+    clearLanding();
+    document.getElementById('controls').className = 'controls';
+    OUT.innerHTML = '<p class="empty">Kon de populaire kaarten niet laden. ' +
+      '<button class="btn" onclick="showLanding()">Opnieuw proberen</button><br>' +
+      'Of typ hierboven een Pokémon en klik op Zoeken.</p>';
+    return;
+  }
+  if (!LANDING) return;   // ondertussen alsnog gezocht/collectie geopend
+  CARDS = cards;
+  document.getElementById('csv').disabled = !CARDS.length;
+  populateFilters();
+  render();
+  renderLandMore(!CARDS.length);
+}
+async function loadMoreLanding(){
+  if (!LANDING || LANDBUSY) return;
+  LANDBUSY = true;
+  const btn = document.getElementById('landMoreBtn');
+  if (btn){ btn.disabled = true; btn.textContent = 'Laden…'; }
+  try {
+    const more = await fetchTopValued(LANDPAGE + 1);
+    if (!LANDING) return;   // ondertussen weggeklikt
+    if (more.length){
+      LANDPAGE++;
+      const have = new Set(CARDS.map(c => c.id).filter(Boolean));
+      CARDS = CARDS.concat(more.filter(c => !c.id || !have.has(c.id)));
+      populateFilters();
+      render();
+    }
+    renderLandMore(more.length < LAND_PAGESIZE);   // minder dan een volle pagina = einde
+  } catch(e){
+    if (btn){ btn.disabled = false; btn.textContent = 'Meer laden'; }
+  } finally { LANDBUSY = false; }
+}
+document.getElementById('landmore').addEventListener('click', e => {
+  if (e.target.closest('#landMoreBtn')) loadMoreLanding();
 });
 
 /* ---------- deelbare link naar de huidige zoekopdracht ---------- */
@@ -1844,7 +1937,7 @@ document.querySelectorAll('[data-ex]').forEach(a => a.addEventListener('click', 
 // Deelbare link geopend? ?q= start meteen dezelfde zoekopdracht.
 (function(){
   const p = new URLSearchParams(location.search);
-  if (!p.get('q')) return;
+  if (!p.get('q')){ showLanding(); return; }   // geen deellink: toon de populaire kaarten
   document.getElementById('q').value = p.get('q');
   if (p.get('mode')) document.getElementById('mode').value = p.get('mode');
   run();
